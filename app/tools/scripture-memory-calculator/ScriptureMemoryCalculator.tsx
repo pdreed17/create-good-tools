@@ -36,7 +36,7 @@ export default function ScriptureMemoryCalculator() {
   const [scopeType, setScopeType] = useState<ScopeType>("passage");
   const [passageText, setPassageText] = useState("");
   const [selectedPassage, setSelectedPassage] = useState<string | null>(null);
-  const [selectedBook, setSelectedBook] = useState<string>("Philippians");
+  const [selectedBook, setSelectedBook] = useState<string>("");
   const [customVerses, setCustomVerses] = useState(10);
   const [minutesPerDay, setMinutesPerDay] = useState(10);
   const [daysPerWeek, setDaysPerWeek] = useState(6);
@@ -57,9 +57,9 @@ export default function ScriptureMemoryCalculator() {
     } else if (scopeType === "book") {
       const book = BIBLE_BOOKS.find(b => b.name === selectedBook);
       return {
-        verseCount: book?.verses ?? 104,
-        wordCount: book?.words ?? 1629,
-        scopeLabel: book?.name ?? selectedBook,
+        verseCount: book?.verses ?? 0,
+        wordCount: book?.words ?? 0,
+        scopeLabel: book?.name ?? "",
       };
     } else {
       return {
