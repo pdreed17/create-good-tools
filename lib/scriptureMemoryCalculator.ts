@@ -1,5 +1,7 @@
 // Scripture Memory Calculator — core logic
 
+export { TRANSLATIONS, type Translation, type TranslationKey } from "./bibleCalculator";
+
 export type MemorizationMethod =
   | "daily-repetition"
   | "spaced-repetition"
@@ -66,6 +68,7 @@ export interface MemoryCalcInput {
   daysPerWeek: number;
   method: MemorizationMethod;
   experience: ExperienceLevel;
+  translationKey?: string; // informational only — wordCount already scaled by caller
 }
 
 export interface DailyBreakdown {
@@ -248,85 +251,139 @@ export function calcRealisticGoal(input: RealisticGoalInput): RealisticGoalResul
   };
 }
 
+// NIV section totals — used as base for scaling other translations per-book.
+// These match the verified values in bibleCalculator.ts SCOPES.
+const NIV_SECTION_TOTALS = {
+  // OT sections
+  "the-law": { words: 155684, testament: "ot" as const },
+  "historical": { words: 198524, testament: "ot" as const },
+  "wisdom": { words: 99726, testament: "ot" as const },
+  "major-prophets": { words: 80705, testament: "ot" as const },
+  "minor-prophets": { words: 17103, testament: "ot" as const },
+  // NT sections
+  "gospels": { words: 83799, testament: "nt" as const },
+  "acts": { words: 18600, testament: "nt" as const },
+  "pauline": { words: 48000, testament: "nt" as const },
+  "general-epistles": { words: 18000, testament: "nt" as const },
+  "revelation": { words: 9852, testament: "nt" as const },
+};
+
+type SectionKey = keyof typeof NIV_SECTION_TOTALS;
+
+// NIV whole-Bible totals from bibleCalculator.ts
+const NIV_OT_TOTAL = 551742;
+const NIV_NT_TOTAL = 176251;
+
+/**
+ * Scale a book's NIV word count to another translation.
+ * Uses the same proportional scaling as bibleCalculator.ts getWordCount().
+ */
+export function getBookWordCount(
+  book: BibleBook,
+  translation: import("./bibleCalculator").Translation
+): number {
+  if (translation.key === "NIV") return book.words;
+
+  const section = NIV_SECTION_TOTALS[book.section];
+  const nivSectionTotal = section.words;
+  const translationTotal =
+    section.testament === "nt" ? translation.words.nt : translation.words.ot;
+  const nivTotal =
+    section.testament === "nt" ? NIV_NT_TOTAL : NIV_OT_TOTAL;
+
+  // Scale: book_words * (translation_section / niv_section)
+  // where each section is already proportionally scaled to the translation's OT/NT total
+  const sectionScale = (translationTotal / nivTotal);
+  return Math.round(book.words * sectionScale);
+}
+
 // All 66 books with verse counts and approximate NIV word counts
 export interface BibleBook {
   name: string;
   testament: "OT" | "NT";
+  section: SectionKey;
   chapters: number;
   verses: number;
-  words: number; // NIV approximate
+  words: number; // NIV approximate — use getBookWordCount() for other translations
 }
 
 export const BIBLE_BOOKS: BibleBook[] = [
-  // OT
-  { name: "Genesis", testament: "OT", chapters: 50, verses: 1533, words: 38290 },
-  { name: "Exodus", testament: "OT", chapters: 40, verses: 1213, words: 32688 },
-  { name: "Leviticus", testament: "OT", chapters: 27, verses: 859, words: 24541 },
-  { name: "Numbers", testament: "OT", chapters: 36, verses: 1288, words: 32902 },
-  { name: "Deuteronomy", testament: "OT", chapters: 34, verses: 959, words: 28461 },
-  { name: "Joshua", testament: "OT", chapters: 24, verses: 658, words: 18854 },
-  { name: "Judges", testament: "OT", chapters: 21, verses: 618, words: 18976 },
-  { name: "Ruth", testament: "OT", chapters: 4, verses: 85, words: 2578 },
-  { name: "1 Samuel", testament: "OT", chapters: 31, verses: 810, words: 25061 },
-  { name: "2 Samuel", testament: "OT", chapters: 24, verses: 695, words: 20612 },
-  { name: "1 Kings", testament: "OT", chapters: 22, verses: 816, words: 24524 },
-  { name: "2 Kings", testament: "OT", chapters: 25, verses: 719, words: 23532 },
-  { name: "1 Chronicles", testament: "OT", chapters: 29, verses: 942, words: 20366 },
-  { name: "2 Chronicles", testament: "OT", chapters: 36, verses: 822, words: 26074 },
-  { name: "Ezra", testament: "OT", chapters: 10, verses: 280, words: 7441 },
-  { name: "Nehemiah", testament: "OT", chapters: 13, verses: 406, words: 10483 },
-  { name: "Esther", testament: "OT", chapters: 10, verses: 167, words: 5637 },
-  { name: "Job", testament: "OT", chapters: 42, verses: 1070, words: 18097 },
-  { name: "Psalms", testament: "OT", chapters: 150, verses: 2461, words: 42706 },
-  { name: "Proverbs", testament: "OT", chapters: 31, verses: 915, words: 15043 },
-  { name: "Ecclesiastes", testament: "OT", chapters: 12, verses: 222, words: 5584 },
-  { name: "Song of Solomon", testament: "OT", chapters: 8, verses: 117, words: 2661 },
-  { name: "Isaiah", testament: "OT", chapters: 66, verses: 1292, words: 37044 },
-  { name: "Jeremiah", testament: "OT", chapters: 52, verses: 1364, words: 42654 },
-  { name: "Lamentations", testament: "OT", chapters: 5, verses: 154, words: 3415 },
-  { name: "Ezekiel", testament: "OT", chapters: 48, verses: 1273, words: 39401 },
-  { name: "Daniel", testament: "OT", chapters: 12, verses: 357, words: 11606 },
-  { name: "Hosea", testament: "OT", chapters: 14, verses: 197, words: 5175 },
-  { name: "Joel", testament: "OT", chapters: 3, verses: 73, words: 2034 },
-  { name: "Amos", testament: "OT", chapters: 9, verses: 146, words: 4217 },
-  { name: "Obadiah", testament: "OT", chapters: 1, verses: 21, words: 440 },
-  { name: "Jonah", testament: "OT", chapters: 4, verses: 48, words: 1321 },
-  { name: "Micah", testament: "OT", chapters: 7, verses: 105, words: 3153 },
-  { name: "Nahum", testament: "OT", chapters: 3, verses: 47, words: 1285 },
-  { name: "Habakkuk", testament: "OT", chapters: 3, verses: 56, words: 1476 },
-  { name: "Zephaniah", testament: "OT", chapters: 3, verses: 53, words: 1617 },
-  { name: "Haggai", testament: "OT", chapters: 2, verses: 38, words: 1131 },
-  { name: "Zechariah", testament: "OT", chapters: 14, verses: 211, words: 6444 },
-  { name: "Malachi", testament: "OT", chapters: 4, verses: 55, words: 1782 },
-  // NT — word counts scaled to match verified NIV section totals from bibleCalculator.ts
-  // Gospels total: 83,799 | Acts: 18,600 | Pauline: 48,000 | General Epistles: 18,000 | Rev: 9,852
-  { name: "Matthew", testament: "NT", chapters: 28, verses: 1071, words: 23707 },
-  { name: "Mark", testament: "NT", chapters: 16, verses: 678, words: 14644 },
-  { name: "Luke", testament: "NT", chapters: 24, verses: 1151, words: 25238 },
-  { name: "John", testament: "NT", chapters: 21, verses: 879, words: 20209 },
-  { name: "Acts", testament: "NT", chapters: 28, verses: 1007, words: 18600 },
-  { name: "Romans", testament: "NT", chapters: 16, verses: 433, words: 10412 },
-  { name: "1 Corinthians", testament: "NT", chapters: 16, verses: 437, words: 10016 },
-  { name: "2 Corinthians", testament: "NT", chapters: 13, verses: 257, words: 6566 },
-  { name: "Galatians", testament: "NT", chapters: 6, verses: 149, words: 3270 },
-  { name: "Ephesians", testament: "NT", chapters: 6, verses: 155, words: 3552 },
-  { name: "Philippians", testament: "NT", chapters: 4, verses: 104, words: 2389 },
-  { name: "Colossians", testament: "NT", chapters: 4, verses: 95, words: 2320 },
-  { name: "1 Thessalonians", testament: "NT", chapters: 5, verses: 89, words: 2172 },
-  { name: "2 Thessalonians", testament: "NT", chapters: 3, verses: 47, words: 1207 },
-  { name: "1 Timothy", testament: "NT", chapters: 6, verses: 113, words: 2333 },
-  { name: "2 Timothy", testament: "NT", chapters: 4, verses: 83, words: 1816 },
-  { name: "Titus", testament: "NT", chapters: 3, verses: 46, words: 1315 },
-  { name: "Philemon", testament: "NT", chapters: 1, verses: 25, words: 631 },
-  { name: "Hebrews", testament: "NT", chapters: 13, verses: 303, words: 6751 },
-  { name: "James", testament: "NT", chapters: 5, verses: 108, words: 2374 },
-  { name: "1 Peter", testament: "NT", chapters: 5, verses: 105, words: 2295 },
-  { name: "2 Peter", testament: "NT", chapters: 3, verses: 61, words: 1498 },
-  { name: "1 John", testament: "NT", chapters: 5, verses: 105, words: 3439 },
-  { name: "2 John", testament: "NT", chapters: 1, verses: 13, words: 408 },
-  { name: "3 John", testament: "NT", chapters: 1, verses: 15, words: 401 },
-  { name: "Jude", testament: "NT", chapters: 1, verses: 25, words: 835 },
-  { name: "Revelation", testament: "NT", chapters: 22, verses: 404, words: 9852 },
+  // OT — The Law (NIV section total: 155,684)
+  { name: "Genesis", testament: "OT", section: "the-law", chapters: 50, verses: 1533, words: 38290 },
+  { name: "Exodus", testament: "OT", section: "the-law", chapters: 40, verses: 1213, words: 32688 },
+  { name: "Leviticus", testament: "OT", section: "the-law", chapters: 27, verses: 859, words: 24541 },
+  { name: "Numbers", testament: "OT", section: "the-law", chapters: 36, verses: 1288, words: 32902 },
+  { name: "Deuteronomy", testament: "OT", section: "the-law", chapters: 34, verses: 959, words: 28461 },
+  // Historical Books (NIV section total: 198,524)
+  { name: "Joshua", testament: "OT", section: "historical", chapters: 24, verses: 658, words: 18854 },
+  { name: "Judges", testament: "OT", section: "historical", chapters: 21, verses: 618, words: 18976 },
+  { name: "Ruth", testament: "OT", section: "historical", chapters: 4, verses: 85, words: 2578 },
+  { name: "1 Samuel", testament: "OT", section: "historical", chapters: 31, verses: 810, words: 25061 },
+  { name: "2 Samuel", testament: "OT", section: "historical", chapters: 24, verses: 695, words: 20612 },
+  { name: "1 Kings", testament: "OT", section: "historical", chapters: 22, verses: 816, words: 24524 },
+  { name: "2 Kings", testament: "OT", section: "historical", chapters: 25, verses: 719, words: 23532 },
+  { name: "1 Chronicles", testament: "OT", section: "historical", chapters: 29, verses: 942, words: 20366 },
+  { name: "2 Chronicles", testament: "OT", section: "historical", chapters: 36, verses: 822, words: 26074 },
+  { name: "Ezra", testament: "OT", section: "historical", chapters: 10, verses: 280, words: 7441 },
+  { name: "Nehemiah", testament: "OT", section: "historical", chapters: 13, verses: 406, words: 10483 },
+  { name: "Esther", testament: "OT", section: "historical", chapters: 10, verses: 167, words: 5637 },
+  // Wisdom Literature (NIV section total: 99,726)
+  { name: "Job", testament: "OT", section: "wisdom", chapters: 42, verses: 1070, words: 18097 },
+  { name: "Psalms", testament: "OT", section: "wisdom", chapters: 150, verses: 2461, words: 42706 },
+  { name: "Proverbs", testament: "OT", section: "wisdom", chapters: 31, verses: 915, words: 15043 },
+  { name: "Ecclesiastes", testament: "OT", section: "wisdom", chapters: 12, verses: 222, words: 5584 },
+  { name: "Song of Solomon", testament: "OT", section: "wisdom", chapters: 8, verses: 117, words: 2661 },
+  // Major Prophets (NIV section total: 80,705) — note: bibleCalc includes Lamentations with Jeremiah here
+  { name: "Isaiah", testament: "OT", section: "major-prophets", chapters: 66, verses: 1292, words: 37044 },
+  { name: "Jeremiah", testament: "OT", section: "major-prophets", chapters: 52, verses: 1364, words: 42654 },
+  { name: "Lamentations", testament: "OT", section: "major-prophets", chapters: 5, verses: 154, words: 3415 },
+  { name: "Ezekiel", testament: "OT", section: "major-prophets", chapters: 48, verses: 1273, words: 39401 },
+  { name: "Daniel", testament: "OT", section: "major-prophets", chapters: 12, verses: 357, words: 11606 },
+  // Minor Prophets (NIV section total: 17,103)
+  { name: "Hosea", testament: "OT", section: "minor-prophets", chapters: 14, verses: 197, words: 5175 },
+  { name: "Joel", testament: "OT", section: "minor-prophets", chapters: 3, verses: 73, words: 2034 },
+  { name: "Amos", testament: "OT", section: "minor-prophets", chapters: 9, verses: 146, words: 4217 },
+  { name: "Obadiah", testament: "OT", section: "minor-prophets", chapters: 1, verses: 21, words: 440 },
+  { name: "Jonah", testament: "OT", section: "minor-prophets", chapters: 4, verses: 48, words: 1321 },
+  { name: "Micah", testament: "OT", section: "minor-prophets", chapters: 7, verses: 105, words: 3153 },
+  { name: "Nahum", testament: "OT", section: "minor-prophets", chapters: 3, verses: 47, words: 1285 },
+  { name: "Habakkuk", testament: "OT", section: "minor-prophets", chapters: 3, verses: 56, words: 1476 },
+  { name: "Zephaniah", testament: "OT", section: "minor-prophets", chapters: 3, verses: 53, words: 1617 },
+  { name: "Haggai", testament: "OT", section: "minor-prophets", chapters: 2, verses: 38, words: 1131 },
+  { name: "Zechariah", testament: "OT", section: "minor-prophets", chapters: 14, verses: 211, words: 6444 },
+  { name: "Malachi", testament: "OT", section: "minor-prophets", chapters: 4, verses: 55, words: 1782 },
+  // NT — Gospels (NIV section total: 83,799)
+  { name: "Matthew", testament: "NT", section: "gospels", chapters: 28, verses: 1071, words: 23707 },
+  { name: "Mark", testament: "NT", section: "gospels", chapters: 16, verses: 678, words: 14644 },
+  { name: "Luke", testament: "NT", section: "gospels", chapters: 24, verses: 1151, words: 25238 },
+  { name: "John", testament: "NT", section: "gospels", chapters: 21, verses: 879, words: 20209 },
+  // Acts (NIV: 18,600)
+  { name: "Acts", testament: "NT", section: "acts", chapters: 28, verses: 1007, words: 18600 },
+  // Pauline Epistles (NIV section total: 48,000)
+  { name: "Romans", testament: "NT", section: "pauline", chapters: 16, verses: 433, words: 10412 },
+  { name: "1 Corinthians", testament: "NT", section: "pauline", chapters: 16, verses: 437, words: 10016 },
+  { name: "2 Corinthians", testament: "NT", section: "pauline", chapters: 13, verses: 257, words: 6566 },
+  { name: "Galatians", testament: "NT", section: "pauline", chapters: 6, verses: 149, words: 3270 },
+  { name: "Ephesians", testament: "NT", section: "pauline", chapters: 6, verses: 155, words: 3552 },
+  { name: "Philippians", testament: "NT", section: "pauline", chapters: 4, verses: 104, words: 2389 },
+  { name: "Colossians", testament: "NT", section: "pauline", chapters: 4, verses: 95, words: 2320 },
+  { name: "1 Thessalonians", testament: "NT", section: "pauline", chapters: 5, verses: 89, words: 2172 },
+  { name: "2 Thessalonians", testament: "NT", section: "pauline", chapters: 3, verses: 47, words: 1207 },
+  { name: "1 Timothy", testament: "NT", section: "pauline", chapters: 6, verses: 113, words: 2333 },
+  { name: "2 Timothy", testament: "NT", section: "pauline", chapters: 4, verses: 83, words: 1816 },
+  { name: "Titus", testament: "NT", section: "pauline", chapters: 3, verses: 46, words: 1315 },
+  { name: "Philemon", testament: "NT", section: "pauline", chapters: 1, verses: 25, words: 631 },
+  // General Epistles (NIV section total: 18,000)
+  { name: "Hebrews", testament: "NT", section: "general-epistles", chapters: 13, verses: 303, words: 6751 },
+  { name: "James", testament: "NT", section: "general-epistles", chapters: 5, verses: 108, words: 2374 },
+  { name: "1 Peter", testament: "NT", section: "general-epistles", chapters: 5, verses: 105, words: 2295 },
+  { name: "2 Peter", testament: "NT", section: "general-epistles", chapters: 3, verses: 61, words: 1498 },
+  { name: "1 John", testament: "NT", section: "general-epistles", chapters: 5, verses: 105, words: 3439 },
+  { name: "2 John", testament: "NT", section: "general-epistles", chapters: 1, verses: 13, words: 408 },
+  { name: "3 John", testament: "NT", section: "general-epistles", chapters: 1, verses: 15, words: 401 },
+  { name: "Jude", testament: "NT", section: "general-epistles", chapters: 1, verses: 25, words: 835 },
+  // Revelation (NIV: 9,852)
+  { name: "Revelation", testament: "NT", section: "revelation", chapters: 22, verses: 404, words: 9852 },
 ];
 
 // Popular memory passages

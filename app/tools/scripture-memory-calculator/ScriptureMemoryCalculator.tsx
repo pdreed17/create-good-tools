@@ -6,15 +6,18 @@ import {
   calcRealisticGoal,
   BIBLE_BOOKS,
   POPULAR_PASSAGES,
+  TRANSLATIONS,
   METHOD_LABELS,
   METHOD_DESCRIPTIONS,
   EXPERIENCE_LABELS,
   EXPERIENCE_DESCRIPTIONS,
+  getBookWordCount,
   formatDateLong,
   formatWeeks,
   type MemorizationMethod,
   type ExperienceLevel,
   type ScopeType,
+  type TranslationKey,
 } from "@/lib/scriptureMemoryCalculator";
 
 type Mode = "how-long" | "what-can-i";
@@ -42,33 +45,50 @@ export default function ScriptureMemoryCalculator() {
   const [daysPerWeek, setDaysPerWeek] = useState(6);
   const [method, setMethod] = useState<MemorizationMethod>("spaced-repetition");
   const [experience, setExperience] = useState<ExperienceLevel>("some");
+  const [translationKey, setTranslationKey] = useState<TranslationKey>("NIV");
   const [timeframeWeeks, setTimeframeWeeks] = useState(52);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  // Derive verse/word counts from scope
+  const translation = TRANSLATIONS.find(t => t.key === translationKey) ?? TRANSLATIONS[0];
+
+  // Derive verse/word counts from scope, scaled to selected translation
   const { verseCount, wordCount, scopeLabel } = useMemo(() => {
     if (scopeType === "passage") {
-      const words = passageText.trim() ? countWords(passageText) : (selectedPassage ? (POPULAR_PASSAGES.find(p => p.reference === selectedPassage)?.words ?? 25) : 25);
-      const verses = selectedPassage ? (POPULAR_PASSAGES.find(p => p.reference === selectedPassage)?.verses ?? 1) : Math.max(1, Math.ceil(words / 25));
+      // Passage word counts are NIV by default; scale to selected translation
+      // using NT ratio (most passages are NT; close enough for OT passages too)
+      const nivNt = 176251;
+      const transNt = translation.words.nt;
+      const scale = transNt / nivNt;
+      const rawWords = passageText.trim()
+        ? countWords(passageText)
+        : (selectedPassage ? (POPULAR_PASSAGES.find(p => p.reference === selectedPassage)?.words ?? 25) : 25);
+      const words = passageText.trim() ? rawWords : Math.round(rawWords * scale);
+      const verses = selectedPassage
+        ? (POPULAR_PASSAGES.find(p => p.reference === selectedPassage)?.verses ?? 1)
+        : Math.max(1, Math.ceil(words / 25));
       const label = selectedPassage ?? (passageText.trim() ? "Custom passage" : "John 3:16");
       return { verseCount: verses, wordCount: words, scopeLabel: label };
     } else if (scopeType === "book") {
       const book = BIBLE_BOOKS.find(b => b.name === selectedBook);
+      if (!book) return { verseCount: 0, wordCount: 0, scopeLabel: "" };
       return {
-        verseCount: book?.verses ?? 0,
-        wordCount: book?.words ?? 0,
-        scopeLabel: book?.name ?? "",
+        verseCount: book.verses,
+        wordCount: getBookWordCount(book, translation),
+        scopeLabel: book.name,
       };
     } else {
+      // Custom verse count: scale average verse length to translation
+      const nivAvgVerseWords = 25;
+      const scale = translation.words.nt / 176251;
       return {
         verseCount: customVerses,
-        wordCount: customVerses * 25,
+        wordCount: Math.round(customVerses * nivAvgVerseWords * scale),
         scopeLabel: `${customVerses} verses`,
       };
     }
-  }, [scopeType, passageText, selectedPassage, selectedBook, customVerses]);
+  }, [scopeType, passageText, selectedPassage, selectedBook, customVerses, translation]);
 
   const howLongResult = useMemo(() => {
     return calcMemorization({
@@ -293,14 +313,17 @@ export default function ScriptureMemoryCalculator() {
                       </select>
                     </div>
                   </div>
-                  {selectedBook && (
-                    <div className="bg-[#E6F3F3] rounded-xl p-3 text-sm text-[#0D6E6E]">
-                      <span className="font-semibold">{selectedBook}:</span>{" "}
-                      {BIBLE_BOOKS.find(b => b.name === selectedBook)?.verses} verses,{" "}
-                      ~{BIBLE_BOOKS.find(b => b.name === selectedBook)?.words.toLocaleString()} words
-                      <span className="text-[#0D6E6E]/60 ml-1">(NIV approx.)</span>
-                    </div>
-                  )}
+                  {selectedBook && (() => {
+                    const book = BIBLE_BOOKS.find(b => b.name === selectedBook);
+                    if (!book) return null;
+                    return (
+                      <div className="bg-[#E6F3F3] rounded-xl p-3 text-sm text-[#0D6E6E]">
+                        <span className="font-semibold">{selectedBook}:</span>{" "}
+                        {book.verses} verses, ~{getBookWordCount(book, translation).toLocaleString()} words
+                        <span className="text-[#0D6E6E]/60 ml-1">({translationKey} approx.)</span>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
@@ -428,6 +451,33 @@ export default function ScriptureMemoryCalculator() {
 
           <div className="border-t border-stone-100" />
 
+          {/* Translation */}
+          <fieldset>
+            <legend className="block text-sm font-semibold text-stone-800 mb-3">
+              Bible translation
+            </legend>
+            <div className="grid grid-cols-4 gap-2">
+              {TRANSLATIONS.map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => setTranslationKey(t.key as TranslationKey)}
+                  className={`py-2 rounded-lg text-sm font-medium border transition-all ${
+                    translationKey === t.key
+                      ? "bg-[#0D6E6E] text-white border-[#0D6E6E]"
+                      : "border-stone-200 text-stone-600 hover:bg-stone-50"
+                  }`}
+                >
+                  {t.key}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-stone-400 mt-2">
+              {TRANSLATIONS.find(t => t.key === translationKey)?.fullName} — word counts scaled accordingly
+            </p>
+          </fieldset>
+
+          <div className="border-t border-stone-100" />
+
           {/* Experience */}
           <fieldset>
             <legend className="block text-sm font-semibold text-stone-800 mb-3">
@@ -469,7 +519,7 @@ export default function ScriptureMemoryCalculator() {
                   {formatWeeks(howLongResult.initialMemorizationWeeks)}
                 </p>
                 <p className="text-sm text-white/70">
-                  {scopeLabel} · {verseCount} verse{verseCount !== 1 ? "s" : ""} · ~{wordCount.toLocaleString()} words (NIV)
+                  {scopeLabel} · {verseCount} verse{verseCount !== 1 ? "s" : ""} · ~{wordCount.toLocaleString()} words ({translationKey})
                 </p>
               </div>
 
