@@ -1,26 +1,37 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-cream: #FAFAF8;
+  --color-teal: #0D6E6E;
+  --color-teal-dark: #0A5A5A;
+  --color-teal-light: #E6F3F3;
+  --color-amber: #D97706;
+  --color-amber-light: #FEF3C7;
+  --color-stone-900: #1C1917;
+  --color-stone-700: #44403C;
+  --color-stone-500: #78716C;
+  --color-stone-300: #D6D3D1;
+  --color-stone-100: #F5F5F4;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-serif: Georgia, 'Times New Roman', serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-cream);
+  color: var(--color-stone-900);
+  font-family: var(--font-sans);
+}
+
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+/* Smooth transitions for interactive elements */
+input[type="range"] {
+  accent-color: var(--color-teal);
+}
+
+input[type="date"] {
+  color-scheme: light;
 }
