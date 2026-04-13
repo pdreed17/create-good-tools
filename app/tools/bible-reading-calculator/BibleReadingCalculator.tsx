@@ -852,7 +852,7 @@ export default function BibleReadingCalculator() {
         <iframe
           src="https://tally.so/embed/EkJerB?alignLeft=0&hideTitle=1&transparentBackground=1&dynamicHeight=1"
           width="100%"
-          height="180"
+          height="320"
           frameBorder={0}
           title="Stay Connected"
           className="mx-auto max-w-md"
