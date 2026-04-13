@@ -116,7 +116,6 @@ export default function BibleReadingCalculator() {
   );
 
   const results = mode === "duration" ? durationResult : paceResult;
-  if (!results) return null;
 
   const benchmarks = useMemo(() => getBenchmarks(translation), [translation]);
 
@@ -339,10 +338,10 @@ export default function BibleReadingCalculator() {
   }, [mode, translationKey, readingStyle, scopes, minutesPerDay, startDate, goalDate, graceDaySet]);
 
   const sustainabilityBg =
-    results.sustainability.level === "great" ||
-    results.sustainability.level === "solid"
+    results?.sustainability.level === "great" ||
+    results?.sustainability.level === "solid"
       ? "bg-[#E6F3F3] border-[#0D6E6E]/20"
-      : results.sustainability.level === "slow"
+      : results?.sustainability.level === "slow"
       ? "bg-stone-50 border-stone-200"
       : "bg-amber-50 border-amber-200";
 
@@ -540,7 +539,7 @@ export default function BibleReadingCalculator() {
         </div>
 
         {/* ── Results panel ── */}
-        <div className="space-y-4">
+        <div className="space-y-4" style={{ visibility: results ? "visible" : "hidden" }}>
           {/* Primary result */}
           <div className="bg-[#0D6E6E] rounded-2xl p-6 text-white">
             {/* Selected sections */}
@@ -582,13 +581,13 @@ export default function BibleReadingCalculator() {
             <div className="bg-white rounded-xl border border-stone-200 p-4">
               <p className="text-xs text-stone-500 mb-1">Chapters/session</p>
               <p className="text-2xl font-bold text-stone-900">
-                {results.chaptersPerSession}
+                {results?.chaptersPerSession}
               </p>
             </div>
             <div className="bg-white rounded-xl border border-stone-200 p-4">
               <p className="text-xs text-stone-500 mb-1">Pages/session</p>
               <p className="text-2xl font-bold text-stone-900">
-                {results.pagesPerSession}
+                {results?.pagesPerSession}
               </p>
             </div>
           </div>
@@ -600,12 +599,12 @@ export default function BibleReadingCalculator() {
             <div className="flex items-start gap-3">
               <div>
                 <p
-                  className={`text-sm font-semibold ${results.sustainability.color}`}
+                  className={`text-sm font-semibold ${results?.sustainability.color}`}
                 >
-                  {results.sustainability.label}
+                  {results?.sustainability.label}
                 </p>
                 <p className="text-xs text-stone-500 mt-0.5">
-                  {results.sustainability.description}
+                  {results?.sustainability.description}
                 </p>
               </div>
             </div>
@@ -613,26 +612,26 @@ export default function BibleReadingCalculator() {
 
           {/* Milestones */}
           {scopes.includes("whole") &&
-            (results.milestones.gospelsDate ||
-              results.milestones.ntDate ||
-              results.milestones.halfwayDate) && (
+            (results?.milestones.gospelsDate ||
+              results?.milestones.ntDate ||
+              results?.milestones.halfwayDate) && (
               <div className="bg-white rounded-xl border border-stone-200 p-4">
                 <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">
                   Milestones
                 </h3>
                 <ul className="space-y-2.5">
-                  {results.milestones.halfwayDate && (
+                  {results?.milestones.halfwayDate && (
                     <li className="flex items-center gap-3">
                       <span className="w-2 h-2 rounded-full bg-[#0D6E6E] shrink-0" />
                       <div>
                         <p className="text-xs text-stone-500">Halfway point</p>
                         <p className="text-sm font-medium text-stone-800">
-                          {formatDateShort(results.milestones.halfwayDate)}
+                          {formatDateShort(results?.milestones.halfwayDate)}
                         </p>
                       </div>
                     </li>
                   )}
-                  {results.milestones.gospelsDate && (
+                  {results?.milestones.gospelsDate && (
                     <li className="flex items-center gap-3">
                       <span className="w-2 h-2 rounded-full bg-[#0D6E6E] shrink-0" />
                       <div>
@@ -640,12 +639,12 @@ export default function BibleReadingCalculator() {
                           Finish the Gospels
                         </p>
                         <p className="text-sm font-medium text-stone-800">
-                          {formatDateShort(results.milestones.gospelsDate)}
+                          {formatDateShort(results?.milestones.gospelsDate)}
                         </p>
                       </div>
                     </li>
                   )}
-                  {results.milestones.ntDate && (
+                  {results?.milestones.ntDate && (
                     <li className="flex items-center gap-3">
                       <span className="w-2 h-2 rounded-full bg-[#0D6E6E] shrink-0" />
                       <div>
@@ -653,7 +652,7 @@ export default function BibleReadingCalculator() {
                           Finish the New Testament
                         </p>
                         <p className="text-sm font-medium text-stone-800">
-                          {formatDateShort(results.milestones.ntDate)}
+                          {formatDateShort(results?.milestones.ntDate)}
                         </p>
                       </div>
                     </li>
