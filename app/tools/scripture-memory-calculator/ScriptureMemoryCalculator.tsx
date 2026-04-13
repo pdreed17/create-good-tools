@@ -339,19 +339,18 @@ export default function ScriptureMemoryCalculator() {
                 )}
 
                 {scopeType === "custom" && (
-                  <div>
-                    <label className="block text-xs font-medium text-stone-500 mb-2">
-                      Number of verses: <span className="text-[#0D6E6E] font-bold">{customVerses}</span>
-                    </label>
-                    <input
-                      type="range" min={1} max={500} value={customVerses}
-                      onChange={(e) => setCustomVerses(Number(e.target.value))}
-                      className="w-full accent-[#0D6E6E]"
-                    />
-                    <div className="flex justify-between text-xs text-stone-400 mt-1">
-                      <span>1 verse</span><span>500 verses</span>
-                    </div>
-                  </div>
+                  <TrackSlider
+                    id="custom-verses"
+                    label="Number of verses"
+                    value={customVerses}
+                    min={1}
+                    max={500}
+                    color="#0D6E6E"
+                    displayValue={`${customVerses}`}
+                    minLabel="1 verse"
+                    maxLabel="500 verses"
+                    onChange={setCustomVerses}
+                  />
                 )}
               </fieldset>
 
@@ -392,19 +391,20 @@ export default function ScriptureMemoryCalculator() {
           <div className="border-t border-stone-100" />
 
           {/* Minutes per day */}
-          <fieldset>
-            <legend className="block text-sm font-semibold text-stone-800 mb-2">
-              Minutes per day: <span className="text-[#0D6E6E] font-bold">{minutesPerDay} min</span>
-            </legend>
-            <input
-              type="range" min={2} max={60} step={1} value={minutesPerDay}
-              onChange={(e) => setMinutesPerDay(Number(e.target.value))}
-              className="w-full accent-[#0D6E6E]"
-            />
-            <div className="flex justify-between text-xs text-stone-400 mt-1">
-              <span>2 min</span><span>60 min</span>
-            </div>
-          </fieldset>
+          <TrackSlider
+            id="minutes-per-day"
+            label="Minutes per day"
+            value={minutesPerDay}
+            min={2}
+            max={60}
+            color="#0D6E6E"
+            displayValue={`${minutesPerDay} min`}
+            minLabel="2 min"
+            maxLabel="60 min"
+            tickPositions={[10, 20, 30, 40, 50, 60]}
+            snapToTicks={false}
+            onChange={setMinutesPerDay}
+          />
 
           {/* Days per week */}
           <fieldset>
@@ -700,6 +700,126 @@ export default function ScriptureMemoryCalculator() {
           />
         </div>
       </section>
+    </div>
+  );
+}
+
+// ─── TrackSlider ─────────────────────────────────────────────────────────────
+
+interface TrackSliderProps {
+  id: string;
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  color: string;
+  displayValue: string;
+  minLabel: string;
+  maxLabel: string;
+  tickPositions?: number[];
+  snapToTicks?: boolean;
+  onChange: (val: number) => void;
+}
+
+function TrackSlider({
+  id,
+  label,
+  value,
+  min,
+  max,
+  color,
+  displayValue,
+  minLabel,
+  maxLabel,
+  tickPositions,
+  snapToTicks = true,
+  onChange,
+}: TrackSliderProps) {
+  const didDragRef = React.useRef(false);
+  const pct = max === min ? 0 : ((value - min) / (max - min)) * 100;
+
+  const ticks: number[] = tickPositions
+    ? tickPositions.filter((v) => v >= min && v <= max).map((v) => ((v - min) / (max - min)) * 100)
+    : [];
+
+  return (
+    <div>
+      <div className="flex items-baseline justify-between mb-3">
+        <label htmlFor={id} className="text-sm font-semibold text-stone-800">
+          {label}:{" "}
+          <span className="font-bold ml-2" style={{ color }}>{displayValue}</span>
+        </label>
+      </div>
+
+      <div className="relative py-4">
+        <div className="relative h-1.5 rounded-full" style={{ backgroundColor: "#E7E5E4" }}>
+          <div
+            className="absolute top-0 left-0 h-full rounded-full transition-all duration-75"
+            style={{ width: `${pct}%`, backgroundColor: color }}
+          />
+        </div>
+
+        {ticks.length > 0 && (
+          <div className="absolute inset-0 pointer-events-none">
+            {ticks.map((tickPct, i) => (
+              <div
+                key={i}
+                className="absolute"
+                style={{
+                  left: `${tickPct}%`,
+                  top: "50%",
+                  width: "2px",
+                  height: "10px",
+                  borderRadius: "1px",
+                  transform: "translate(-50%, -50%)",
+                  backgroundColor: tickPct <= pct ? "rgba(255,255,255,0.9)" : "#C7C4C1",
+                }}
+              />
+            ))}
+          </div>
+        )}
+
+        <input
+          id={id}
+          type="range"
+          min={min}
+          max={max}
+          value={value}
+          onMouseDown={() => { didDragRef.current = false; }}
+          onTouchStart={() => { didDragRef.current = false; }}
+          onMouseMove={() => { didDragRef.current = true; }}
+          onTouchMove={() => { didDragRef.current = true; }}
+          onChange={(e) => onChange(Number(e.target.value))}
+          onClick={(e) => {
+            if (didDragRef.current) return;
+            if (!snapToTicks || !tickPositions || tickPositions.length === 0) return;
+            const raw = Number((e.target as HTMLInputElement).value);
+            const nearest = tickPositions.reduce((a, b) =>
+              Math.abs(b - raw) < Math.abs(a - raw) ? b : a
+            );
+            const nearestPct = ((nearest - min) / (max - min)) * 100;
+            const rawPct = ((raw - min) / (max - min)) * 100;
+            if (Math.abs(nearestPct - rawPct) <= 4) onChange(nearest);
+          }}
+          className="absolute inset-0 w-full opacity-0 cursor-pointer"
+          style={{ margin: 0, height: "100%" }}
+          aria-label={label}
+          aria-valuemin={min}
+          aria-valuemax={max}
+          aria-valuenow={value}
+          aria-valuetext={displayValue}
+        />
+
+        <div
+          className="absolute top-1/2 w-5 h-5 rounded-full shadow-md border-2 border-white transition-all duration-75 pointer-events-none"
+          style={{ left: `${pct}%`, transform: "translate(-50%, -50%)", backgroundColor: color }}
+        />
+      </div>
+
+      <div className="flex justify-between text-xs text-stone-400 mt-1">
+        <span>{minLabel}</span>
+        <span>{maxLabel}</span>
+      </div>
     </div>
   );
 }
