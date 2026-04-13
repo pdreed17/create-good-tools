@@ -12,7 +12,10 @@ export const metadata: Metadata = {
   title: "Free Tools for Creatives | Create Good",
   description:
     "Free interactive tools for Christ-centered creatives. Bible reading calculators, scripture memory trackers, generosity planners, and more.",
-  metadataBase: new URL("https://creategood.com"),
+  metadataBase: new URL("https://creategoodnow.com"),
+  icons: {
+    icon: "/favicon.svg",
+  },
   openGraph: {
     siteName: "Create Good",
     type: "website",

@@ -1,0 +1,9 @@
+<svg viewBox="0 0 350 350" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Bold C shape -->
+  <path d="M175 60C215 60 250 75 275 100C285 110 290 125 285 140C280 150 270 155 260 155C250 155 242 148 238 138C225 115 202 100 175 100C130 100 95 135 95 180C95 225 130 260 175 260C202 260 225 245 238 222C242 212 250 205 260 205C270 205 280 210 285 220C290 235 285 250 275 260C250 285 215 300 175 300C108 300 55 247 55 180C55 113 108 60 175 60Z" fill="currentColor"/>
+
+  <!-- Three blocks forming lowercase g -->
+  <rect x="188" y="176" width="64" height="64" rx="10" fill="currentColor"/>
+  <rect x="260" y="176" width="64" height="64" rx="10" fill="currentColor"/>
+  <rect x="260" y="248" width="64" height="64" rx="10" fill="currentColor"/>
+</svg>

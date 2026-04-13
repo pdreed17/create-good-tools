@@ -11,7 +11,7 @@ export default function ToolSuggestion() {
         <iframe
           src="https://tally.so/embed/vGOVlQ?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1"
           width="100%"
-          height="160"
+          height="220"
           frameBorder={0}
           title="Tool Suggestion"
         />
