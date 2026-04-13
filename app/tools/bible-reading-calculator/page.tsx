@@ -8,13 +8,13 @@ export const metadata: Metadata = {
   description:
     "Calculate how long to read the Bible with our free tool. Customize by translation (NIV, ESV, KJV, NLT), reading speed, daily schedule, and Old or New Testament.",
   alternates: {
-    canonical: "https://creategood.com/tools/bible-reading-calculator",
+    canonical: "https://creategoodnow.com/tools/bible-reading-calculator",
   },
   openGraph: {
     title: "Free Bible Reading Calculator — Your Personalized Reading Plan",
     description:
       "Calculate how long to read the Bible with our free tool. Customize by translation, reading speed, daily schedule, and OT/NT.",
-    url: "https://creategood.com/tools/bible-reading-calculator",
+    url: "https://creategoodnow.com/tools/bible-reading-calculator",
   },
 };
 
@@ -97,19 +97,19 @@ const breadcrumbSchema = {
       "@type": "ListItem",
       position: 1,
       name: "Create Good",
-      item: "https://creategood.com",
+      item: "https://creategoodnow.com",
     },
     {
       "@type": "ListItem",
       position: 2,
       name: "Tools",
-      item: "https://creategood.com/tools",
+      item: "https://creategoodnow.com/tools",
     },
     {
       "@type": "ListItem",
       position: 3,
       name: "Bible Reading Calculator",
-      item: "https://creategood.com/tools/bible-reading-calculator",
+      item: "https://creategoodnow.com/tools/bible-reading-calculator",
     },
   ],
 };
@@ -120,7 +120,7 @@ const softwareAppSchema = {
   name: "Bible Reading Pace Calculator",
   description:
     "Free tool to calculate how long it takes to read the Bible and build a personalized reading plan by translation, pace, and schedule.",
-  url: "https://creategood.com/tools/bible-reading-calculator",
+  url: "https://creategoodnow.com/tools/bible-reading-calculator",
   applicationCategory: "EducationalApplication",
   operatingSystem: "Any",
   offers: {

@@ -7,13 +7,13 @@ export const metadata: Metadata = {
   description:
     "Explore giving percentages, project your annual Kingdom impact, and see what a step of faith could mean. Free generosity planning tool from Create Good.",
   alternates: {
-    canonical: "https://creategood.com/tools/generosity-calculator",
+    canonical: "https://creategoodnow.com/tools/generosity-calculator",
   },
   openGraph: {
     title: "Generosity Calculator | Create Good",
     description:
       "Explore giving percentages, project your annual Kingdom impact, and see what a step of faith could mean.",
-    url: "https://creategood.com/tools/generosity-calculator",
+    url: "https://creategoodnow.com/tools/generosity-calculator",
   },
 };
 

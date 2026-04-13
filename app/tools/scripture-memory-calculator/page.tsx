@@ -7,13 +7,13 @@ export const metadata: Metadata = {
   description:
     "Set a scripture memory goal and get a realistic daily review schedule. Based on spaced repetition principles so God's Word really sticks. Free tool from Create Good.",
   alternates: {
-    canonical: "https://creategood.com/tools/scripture-memory-calculator",
+    canonical: "https://creategoodnow.com/tools/scripture-memory-calculator",
   },
   openGraph: {
     title: "Scripture Memory Calculator | Create Good",
     description:
       "Set a scripture memory goal and get a realistic daily review schedule.",
-    url: "https://creategood.com/tools/scripture-memory-calculator",
+    url: "https://creategoodnow.com/tools/scripture-memory-calculator",
   },
 };
 

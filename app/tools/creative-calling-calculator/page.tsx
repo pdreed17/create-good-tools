@@ -7,13 +7,13 @@ export const metadata: Metadata = {
   description:
     "A reflection tool for Christ-centered creatives to see where your skills, passions, and Kingdom opportunities intersect — and what to do next. Free from Create Good.",
   alternates: {
-    canonical: "https://creategood.com/tools/creative-calling-calculator",
+    canonical: "https://creategoodnow.com/tools/creative-calling-calculator",
   },
   openGraph: {
     title: "Creative Calling Calculator | Create Good",
     description:
       "Discover where your skills, passions, and Kingdom opportunities intersect.",
-    url: "https://creategood.com/tools/creative-calling-calculator",
+    url: "https://creategoodnow.com/tools/creative-calling-calculator",
   },
 };
 

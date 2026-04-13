@@ -8,13 +8,13 @@ export const metadata: Metadata = {
   description:
     "Free interactive tools to help you grow in faith, stewardship, and creativity. Bible reading calculators, scripture memory trackers, and more — from Create Good.",
   alternates: {
-    canonical: "https://creategood.com/tools",
+    canonical: "https://creategoodnow.com/tools",
   },
   openGraph: {
     title: "Free Tools for Creatives | Create Good",
     description:
       "Free interactive tools to help you grow in faith, stewardship, and creativity.",
-    url: "https://creategood.com/tools",
+    url: "https://creategoodnow.com/tools",
   },
 };
 
@@ -28,7 +28,7 @@ export default function ToolsHub() {
       <header className="border-b border-stone-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <Link
-            href="https://creategood.com"
+            href="https://creategoodnow.com"
             className="font-semibold text-stone-800 hover:text-[#0D6E6E] transition-colors text-sm"
           >
             Create Good
@@ -129,7 +129,7 @@ export default function ToolsHub() {
           <p className="text-sm text-stone-500">
             Made with care by{" "}
             <Link
-              href="https://creategood.com"
+              href="https://creategoodnow.com"
               className="text-[#0D6E6E] hover:underline font-medium"
             >
               Create Good
