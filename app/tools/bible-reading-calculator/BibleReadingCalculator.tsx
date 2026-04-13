@@ -817,59 +817,47 @@ export default function BibleReadingCalculator() {
         </div>
       </section>
 
-      {/* ── Share + Stay Connected ── */}
+      {/* ── Spread the Word ── */}
       <section
-        className="rounded-2xl mb-4 overflow-hidden"
+        className="rounded-2xl p-8 mb-6 text-center"
         style={{ backgroundColor: "#E6F3F3" }}
-        aria-label="Share and stay connected"
+        aria-label="Share this calculator"
       >
-        <div className="flex flex-col sm:flex-row">
-          {/* Share column */}
-          <div className="flex-1 px-8 py-8 flex flex-col items-center text-center sm:items-start sm:text-left">
-            <p className="text-xs font-semibold tracking-widest uppercase text-[#0D6E6E] mb-3">
-              Spread the Word
-            </p>
-            <h2
-              className="text-xl font-bold text-stone-900 mb-2 leading-snug"
-              style={{ fontFamily: "Georgia, serif" }}
-            >
-              Know someone who wants to read the Bible?
-            </h2>
-            <p className="text-stone-600 text-sm mb-5">
-              Share this calculator with a friend, small group, or church community.
-            </p>
-            <ShareCalculatorButton />
-          </div>
+        <p className="text-xs font-semibold tracking-widest uppercase text-[#0D6E6E] mb-3">
+          Spread the Word
+        </p>
+        <h2 className="text-2xl font-bold text-stone-900 mb-2" style={{ fontFamily: "Georgia, serif" }}>
+          Know someone who wants to read the Bible?
+        </h2>
+        <p className="text-stone-600 text-sm mb-5 max-w-md mx-auto">
+          Share this calculator with a friend, small group, or church community.
+        </p>
+        <ShareCalculatorButton />
+      </section>
 
-          {/* Divider */}
-          <div className="sm:hidden h-px mx-8" style={{ backgroundColor: "#C5E0E0" }} />
-          <div className="hidden sm:block w-px my-8" style={{ backgroundColor: "#C5E0E0" }} />
-
-          {/* Stay connected column */}
-          <div className="flex-1 px-8 py-8 flex flex-col items-center text-center sm:items-start sm:text-left">
-            <p className="text-xs font-semibold tracking-widest uppercase text-[#0D6E6E] mb-3">
-              Create Good
-            </p>
-            <h2
-              className="text-xl font-bold text-stone-900 mb-2 leading-snug"
-              style={{ fontFamily: "Georgia, serif" }}
-            >
-              Get updates from Create Good
-            </h2>
-            <p className="text-stone-600 text-sm mb-5">
-              New tools, resources, and opportunities — straight to your inbox.
-            </p>
-            <a
-              href="https://tally.so/r/EkJerB"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block px-6 py-3 rounded-xl bg-[#0D6E6E] text-white text-sm font-semibold hover:bg-[#0A5A5A] transition-colors"
-            >
-              Stay in touch
-            </a>
-            <p className="text-xs text-[#0D6E6E] opacity-60 mt-3">No spam. Unsubscribe any time.</p>
-          </div>
-        </div>
+      {/* ── Stay Connected (Tally embed) ── */}
+      <section
+        className="rounded-2xl p-8 mb-4 text-center border border-stone-200 bg-white"
+        aria-label="Stay connected"
+      >
+        <p className="text-xs font-semibold tracking-widest uppercase text-stone-400 mb-3">
+          Stay Connected
+        </p>
+        <h2 className="text-2xl font-bold text-stone-900 mb-2" style={{ fontFamily: "Georgia, serif" }}>
+          Get updates from Create Good
+        </h2>
+        <p className="text-stone-500 text-sm mb-6 max-w-md mx-auto">
+          New tools, resources, and opportunities — straight to your inbox.
+        </p>
+        <iframe
+          src="https://tally.so/embed/EkJerB?alignLeft=0&hideTitle=1&transparentBackground=1&dynamicHeight=1"
+          width="100%"
+          height="180"
+          frameBorder={0}
+          title="Stay Connected"
+          className="mx-auto max-w-md"
+        />
+        <p className="text-xs text-stone-400 mt-2">No spam. Unsubscribe any time.</p>
       </section>
     </article>
   );
@@ -888,22 +876,12 @@ function ShareCalculatorButton() {
   };
 
   return (
-    <div className="flex flex-row gap-3 flex-wrap justify-center sm:justify-start">
-      <button
-        onClick={handleCopy}
-        className="px-6 py-3 rounded-xl bg-[#0D6E6E] text-white text-sm font-semibold hover:bg-[#0A5A5A] transition-colors"
-      >
-        {copied ? "Copied!" : "Copy link"}
-      </button>
-      <a
-        href={`https://twitter.com/intent/tweet?text=How+long+does+it+take+to+read+the+Bible%3F+This+free+calculator+helps+you+find+a+sustainable+pace.&url=${encodeURIComponent(url)}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="px-6 py-3 rounded-xl border border-[#0D6E6E] border-opacity-30 text-[#0D6E6E] text-sm font-semibold hover:bg-[#0D6E6E] hover:bg-opacity-10 transition-colors"
-      >
-        Share on X
-      </a>
-    </div>
+    <button
+      onClick={handleCopy}
+      className="px-6 py-3 rounded-xl bg-[#0D6E6E] text-white text-sm font-semibold hover:bg-[#0A5A5A] transition-colors"
+    >
+      {copied ? "Copied!" : "Copy link"}
+    </button>
   );
 }
 
