@@ -856,26 +856,14 @@ export default function BibleReadingCalculator() {
         <p className="text-stone-500 mb-6 max-w-md mx-auto text-sm">
           New tools, resources, and opportunities — straight to your inbox.
         </p>
-        <form
-          action="https://formspree.io/f/YOUR_FORM_ID"
-          method="POST"
-          className="flex flex-col sm:flex-row gap-2 justify-center max-w-sm mx-auto"
+        <a
+          href="https://tally.so/r/EkJerB"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block px-6 py-3 rounded-xl bg-[#0D6E6E] text-white text-sm font-semibold hover:bg-[#0A5A5A] transition-colors"
         >
-          <input
-            type="email"
-            name="email"
-            placeholder="your@email.com"
-            required
-            aria-label="Email address"
-            className="flex-1 px-4 py-3 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D6E6E] bg-[#FAFAF8] text-stone-800"
-          />
-          <button
-            type="submit"
-            className="px-6 py-3 rounded-xl bg-[#0D6E6E] text-white text-sm font-semibold hover:bg-[#0A5A5A] transition-colors whitespace-nowrap"
-          >
-            Stay in touch
-          </button>
-        </form>
+          Stay in touch
+        </a>
         <p className="text-xs text-stone-400 mt-3">No spam. Unsubscribe any time.</p>
       </section>
     </article>
