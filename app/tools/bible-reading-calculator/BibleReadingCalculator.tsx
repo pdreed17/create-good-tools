@@ -154,8 +154,8 @@ export default function BibleReadingCalculator() {
         `Translation: ${translation.fullName}`,
         `Reading: ${scopeLabels}`,
         `Pace: ${minutesPerDay} min/day, ${daysPerWeek} days/week`,
-        `Finish date: ${formatDate(durationResult.finishDate)}`,
-        `Chapters/day: ${durationResult.chaptersPerSession}`,
+        durationResult ? `Finish date: ${formatDate(durationResult.finishDate)}` : "",
+        durationResult ? `Chapters/day: ${durationResult.chaptersPerSession}` : "",
         ``,
         `Calculate yours: ${shareUrl}`,
       ].join("\n");
@@ -165,8 +165,8 @@ export default function BibleReadingCalculator() {
         `Translation: ${translation.fullName}`,
         `Reading: ${scopeLabels}`,
         `Goal: finish by ${formatDateShort(parseDateInput(goalDate))}`,
-        `Required: ${paceResult.minutesPerDay} min/day, ${daysPerWeek} days/week`,
-        `Chapters/day: ${paceResult.chaptersPerSession}`,
+        paceResult ? `Required: ${paceResult.minutesPerDay} min/day, ${daysPerWeek} days/week` : "",
+        paceResult ? `Chapters/day: ${paceResult.chaptersPerSession}` : "",
         ``,
         `Calculate yours: ${shareUrl}`,
       ].join("\n");
@@ -192,10 +192,10 @@ export default function BibleReadingCalculator() {
       .map((k) => SCOPES.find((s) => s.key === k)?.label ?? k)
       .join(", ");
 
-    const mpd = mode === "duration" ? minutesPerDay : paceResult.minutesPerDay;
+    const mpd = mode === "duration" ? minutesPerDay : (paceResult?.minutesPerDay ?? 0);
     const chap = mode === "duration"
-      ? durationResult.chaptersPerSession
-      : paceResult.chaptersPerSession;
+      ? (durationResult?.chaptersPerSession ?? 0)
+      : (paceResult?.chaptersPerSession ?? 0);
 
     const summary = `Bible Reading — ${scopeLabels}`;
     const description = [
@@ -222,7 +222,7 @@ export default function BibleReadingCalculator() {
 
     // Finish date — use duration result or parsed goal date
     const finishDate = mode === "duration"
-      ? durationResult.finishDate
+      ? (durationResult?.finishDate ?? new Date())
       : parseDateInput(goalDate);
     // UNTIL in ICS must be the day after the last recurrence (exclusive end)
     const until = new Date(finishDate);
@@ -555,11 +555,11 @@ export default function BibleReadingCalculator() {
                   You&apos;ll finish on
                 </p>
                 <p className="text-2xl font-bold leading-tight mb-1">
-                  {formatDate(durationResult.finishDate)}
+                  {durationResult ? formatDate(durationResult.finishDate) : "—"}
                 </p>
                 <p className="text-sm text-white/60">
-                  {durationResult.calendarDays} calendar days •{" "}
-                  {durationResult.totalReadingDays} reading days
+                  {durationResult?.calendarDays} calendar days •{" "}
+                  {durationResult?.totalReadingDays} reading days
                 </p>
               </>
             ) : (
@@ -568,7 +568,7 @@ export default function BibleReadingCalculator() {
                   You need to read
                 </p>
                 <p className="text-3xl font-bold mb-1">
-                  {paceResult.minutesPerDay} min/day
+                  {paceResult?.minutesPerDay} min/day
                 </p>
                 <p className="text-sm text-white/60">
                   to finish by {formatDateShort(parseDateInput(goalDate))}
