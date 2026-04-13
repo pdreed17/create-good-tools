@@ -85,33 +85,38 @@ export default function BibleReadingCalculator() {
 
   const durationResult = useMemo(
     () =>
-      calcDuration({
-        translation,
-        scopes,
-        wpm,
-        minutesPerDay,
-        daysPerWeek,
-        graceDaysPerWeek: graceDays,
-        startDate: parseDateInput(startDate),
-      }),
-    [translation, scopes, wpm, minutesPerDay, daysPerWeek, graceDays, startDate]
+      startDate
+        ? calcDuration({
+            translation,
+            scopes,
+            wpm,
+            minutesPerDay,
+            daysPerWeek,
+            graceDaysPerWeek: 0,
+            startDate: parseDateInput(startDate),
+          })
+        : null,
+    [translation, scopes, wpm, minutesPerDay, daysPerWeek, startDate]
   );
 
   const paceResult = useMemo(
     () =>
-      calcPace({
-        translation,
-        scopes,
-        wpm,
-        goalDate: parseDateInput(goalDate),
-        daysPerWeek,
-        graceDaysPerWeek: graceDays,
-        startDate: startDate ? parseDateInput(startDate) : new Date(),
-      }),
-    [translation, scopes, wpm, goalDate, daysPerWeek, graceDays, startDate]
+      goalDate
+        ? calcPace({
+            translation,
+            scopes,
+            wpm,
+            goalDate: parseDateInput(goalDate),
+            daysPerWeek,
+            graceDaysPerWeek: 0,
+            startDate: startDate ? parseDateInput(startDate) : new Date(),
+          })
+        : null,
+    [translation, scopes, wpm, goalDate, daysPerWeek, startDate]
   );
 
   const results = mode === "duration" ? durationResult : paceResult;
+  if (!results) return null;
 
   const benchmarks = useMemo(() => getBenchmarks(translation), [translation]);
 
@@ -337,7 +342,7 @@ export default function BibleReadingCalculator() {
     results.sustainability.level === "great" ||
     results.sustainability.level === "solid"
       ? "bg-[#E6F3F3] border-[#0D6E6E]/20"
-      : results.sustainability.level === "lightning"
+      : results.sustainability.level === "slow"
       ? "bg-stone-50 border-stone-200"
       : "bg-amber-50 border-amber-200";
 
@@ -813,11 +818,11 @@ export default function BibleReadingCalculator() {
         </div>
       </section>
 
-      {/* ── Email capture ── */}
+      {/* ── Share this calculator ── */}
       <section
-        className="rounded-2xl p-8 mb-4 text-center"
+        className="rounded-2xl p-8 mb-6 text-center"
         style={{ backgroundColor: "#E6F3F3" }}
-        aria-label="Newsletter signup"
+        aria-label="Share this calculator"
       >
         <p className="text-xs font-semibold tracking-widest uppercase text-[#0D6E6E] mb-3">
           Create Good
@@ -826,16 +831,34 @@ export default function BibleReadingCalculator() {
           className="text-2xl font-bold text-stone-900 mb-3"
           style={{ fontFamily: "Georgia, serif" }}
         >
-          Want a free Bible reading plan PDF?
+          Know someone who wants to read the Bible?
         </h2>
         <p className="text-stone-600 mb-6 max-w-md mx-auto">
-          Join Create Good — a free newsletter for Christ-centered creatives.
-          We&apos;ll send you a printable reading plan along with weekly
-          encouragement.
+          Share this calculator with a friend, small group, or church community.
+        </p>
+        <ShareCalculatorButton />
+      </section>
+
+      {/* ── Stay connected ── */}
+      <section
+        className="rounded-2xl p-8 mb-4 text-center border border-stone-200 bg-white"
+        aria-label="Stay connected"
+      >
+        <p className="text-xs font-semibold tracking-widest uppercase text-stone-400 mb-3">
+          Stay Connected
+        </p>
+        <h2
+          className="text-2xl font-bold text-stone-900 mb-3"
+          style={{ fontFamily: "Georgia, serif" }}
+        >
+          Get updates from Create Good
+        </h2>
+        <p className="text-stone-500 mb-6 max-w-md mx-auto text-sm">
+          New tools, resources, and opportunities — straight to your inbox.
         </p>
         <form
-          action="#"
-          method="post"
+          action="https://formspree.io/f/YOUR_FORM_ID"
+          method="POST"
           className="flex flex-col sm:flex-row gap-2 justify-center max-w-sm mx-auto"
         >
           <input
@@ -844,18 +867,50 @@ export default function BibleReadingCalculator() {
             placeholder="your@email.com"
             required
             aria-label="Email address"
-            className="flex-1 px-4 py-3 rounded-xl border border-white/60 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D6E6E] bg-white text-stone-800"
+            className="flex-1 px-4 py-3 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D6E6E] bg-[#FAFAF8] text-stone-800"
           />
           <button
             type="submit"
             className="px-6 py-3 rounded-xl bg-[#0D6E6E] text-white text-sm font-semibold hover:bg-[#0A5A5A] transition-colors whitespace-nowrap"
           >
-            Send me the plan
+            Stay in touch
           </button>
         </form>
-        <p className="text-xs text-stone-500 mt-3">No spam. Unsubscribe any time.</p>
+        <p className="text-xs text-stone-400 mt-3">No spam. Unsubscribe any time.</p>
       </section>
     </article>
+  );
+}
+
+// ─── ShareCalculatorButton ───────────────────────────────────────────────────
+
+function ShareCalculatorButton() {
+  const [copied, setCopied] = React.useState(false);
+  const url = typeof window !== "undefined" ? window.location.href.split("?")[0] : "";
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+      <button
+        onClick={handleCopy}
+        className="px-6 py-3 rounded-xl bg-[#0D6E6E] text-white text-sm font-semibold hover:bg-[#0A5A5A] transition-colors"
+      >
+        {copied ? "Copied!" : "Copy link"}
+      </button>
+      <a
+        href={`https://twitter.com/intent/tweet?text=How+long+does+it+take+to+read+the+Bible%3F+This+free+calculator+helps+you+find+a+sustainable+pace.&url=${encodeURIComponent(url)}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="px-6 py-3 rounded-xl border border-stone-300 text-stone-700 text-sm font-semibold hover:bg-stone-50 transition-colors"
+      >
+        Share on X
+      </a>
+    </div>
   );
 }
 

@@ -26,7 +26,7 @@ export const TRANSLATIONS: Translation[] = [
     key: "NIV",
     label: "NIV",
     fullName: "New International Version",
-    words: { whole: 727969, ot: 551742, nt: 176251 },
+    words: { whole: 727993, ot: 551742, nt: 176251 },
   },
   {
     key: "ESV",
@@ -50,7 +50,7 @@ export const TRANSLATIONS: Translation[] = [
     key: "KJV",
     label: "KJV",
     fullName: "King James Version",
-    words: { whole: 783137, ot: 610296, nt: 180382 },
+    words: { whole: 783137, ot: 602755, nt: 180382 },
   },
   {
     key: "NKJV",
@@ -62,7 +62,7 @@ export const TRANSLATIONS: Translation[] = [
     key: "NASB",
     label: "NASB",
     fullName: "New American Standard",
-    words: { whole: 782815, ot: 609269, nt: 179011 },
+    words: { whole: 782815, ot: 603804, nt: 179011 },
   },
   {
     key: "MSG",
@@ -205,7 +205,7 @@ export const SCOPES: Scope[] = [
     label: "Gospels",
     chapters: 89,
     books: "Matthew, Mark, Luke, John",
-    nivWords: 64000,
+    nivWords: 83799,
     testament: "nt",
   },
   {
@@ -213,23 +213,23 @@ export const SCOPES: Scope[] = [
     label: "Acts",
     chapters: 28,
     books: "Acts",
-    nivWords: 18450,
+    nivWords: 18600,
     testament: "nt",
   },
   {
     key: "pauline",
     label: "Pauline Epistles",
     chapters: 87,
-    books: "Romans, 1–2 Corinthians, Galatians, Ephesians, Philippians, Colossians, 1–2 Thessalonians, 1–2 Timothy, Titus, Philemon, Hebrews",
-    nivWords: 55000,
+    books: "Romans, 1–2 Corinthians, Galatians, Ephesians, Philippians, Colossians, 1–2 Thessalonians, 1–2 Timothy, Titus, Philemon",
+    nivWords: 48000,
     testament: "nt",
   },
   {
     key: "general-epistles",
     label: "General Epistles",
     chapters: 34,
-    books: "James, 1–2 Peter, 1–3 John, Jude",
-    nivWords: 11000,
+    books: "Hebrews, James, 1–2 Peter, 1–3 John, Jude",
+    nivWords: 18000,
     testament: "nt",
   },
   {
@@ -331,7 +331,7 @@ export function aggregateChapters(scopes: ScopeKey[]): number {
 // ─── Sustainability ──────────────────────────────────────────────────────────
 
 export type SustainabilityLevel =
-  | "lightning"
+  | "slow"
   | "great"
   | "solid"
   | "dedicated"
@@ -347,7 +347,7 @@ export interface Sustainability {
 export function getSustainability(minutesPerDay: number): Sustainability {
   if (minutesPerDay < 5) {
     return {
-      level: "lightning",
+      level: "slow",
       label: "Very slow pace",
       description: "This will take many years — try bumping up to 10–15 min/day",
       color: "text-stone-500",
@@ -386,8 +386,7 @@ export function getSustainability(minutesPerDay: number): Sustainability {
 // ─── Milestone helpers ───────────────────────────────────────────────────────
 
 // Chapters at which milestones occur (cumulative from Genesis)
-const GOSPELS_START_CHAPTER = 930; // Matthew starts after OT (929 chapters)
-const GOSPELS_END_CHAPTER = 1018; // Matthew(28) + Mark(16) + Luke(24) + John(21) = 89 chapters
+const GOSPELS_END_CHAPTER = 1018; // OT(929) + Gospels(89) = 1018
 const NT_END_CHAPTER = 1189;
 const HALFWAY_CHAPTER = 595; // ~halfway through whole Bible
 
@@ -487,10 +486,8 @@ export function calcDuration(params: {
   const milestoneScope: ScopeKey = scopes.includes("whole") ? "whole" : scopes[0];
 
   const totalMinutes = totalWords / wpm;
-  const effectiveDaysPerWeek = Math.max(
-    0.5,
-    daysPerWeek - graceDaysPerWeek
-  );
+  // daysPerWeek already reflects effective reading days (grace days excluded by caller)
+  const effectiveDaysPerWeek = Math.max(0.5, daysPerWeek);
 
   const totalReadingDays = Math.ceil(totalMinutes / minutesPerDay);
   const calendarDays = Math.ceil(
@@ -567,10 +564,8 @@ export function calcPace(params: {
   const milestoneScope: ScopeKey = scopes.includes("whole") ? "whole" : scopes[0];
 
   const totalMinutes = totalWords / wpm;
-  const effectiveDaysPerWeek = Math.max(
-    0.5,
-    daysPerWeek - graceDaysPerWeek
-  );
+  // daysPerWeek already reflects effective reading days (grace days excluded by caller)
+  const effectiveDaysPerWeek = Math.max(0.5, daysPerWeek);
 
   // Calendar days available
   const msPerDay = 1000 * 60 * 60 * 24;
@@ -693,7 +688,10 @@ export function formatDateShort(date: Date): string {
 
 export function todayString(): string {
   const d = new Date();
-  return d.toISOString().split("T")[0];
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 export function parseDateInput(value: string): Date {
