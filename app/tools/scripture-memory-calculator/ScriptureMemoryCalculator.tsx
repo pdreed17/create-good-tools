@@ -297,7 +297,8 @@ export default function ScriptureMemoryCalculator() {
                     <div className="bg-[#E6F3F3] rounded-xl p-3 text-sm text-[#0D6E6E]">
                       <span className="font-semibold">{selectedBook}:</span>{" "}
                       {BIBLE_BOOKS.find(b => b.name === selectedBook)?.verses} verses,{" "}
-                      ~{BIBLE_BOOKS.find(b => b.name === selectedBook)?.words.toLocaleString()} words (NIV)
+                      ~{BIBLE_BOOKS.find(b => b.name === selectedBook)?.words.toLocaleString()} words
+                      <span className="text-[#0D6E6E]/60 ml-1">(NIV approx.)</span>
                     </div>
                   )}
                 </div>
@@ -468,7 +469,7 @@ export default function ScriptureMemoryCalculator() {
                   {formatWeeks(howLongResult.initialMemorizationWeeks)}
                 </p>
                 <p className="text-sm text-white/70">
-                  {scopeLabel} · {verseCount} verse{verseCount !== 1 ? "s" : ""} · ~{wordCount.toLocaleString()} words
+                  {scopeLabel} · {verseCount} verse{verseCount !== 1 ? "s" : ""} · ~{wordCount.toLocaleString()} words (NIV)
                 </p>
               </div>
 
