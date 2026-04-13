@@ -578,9 +578,13 @@ export default function ScriptureMemoryCalculator() {
               </div>
 
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                <p className="text-sm text-amber-800 leading-relaxed">
-                  <span className="font-semibold">The goal isn't quantity.</span> A handful of verses truly internalized will serve you more
-                  than a hundred half-remembered. Start small, review faithfully.
+                <p className="text-sm text-amber-800 leading-relaxed italic">
+                  "{realisticGoalResult.versesAchievable <= 10
+                    ? `At ${minutesPerDay} min/day, you can deeply memorize ${realisticGoalResult.versesAchievable} verses in ${TIMEFRAME_OPTIONS.find(o => o.weeks === timeframeWeeks)?.label}. Quality over quantity — know them cold.`
+                    : realisticGoalResult.versesAchievable <= 52
+                    ? `${realisticGoalResult.versesAchievable} verses at ${minutesPerDay} min/day in ${TIMEFRAME_OPTIONS.find(o => o.weeks === timeframeWeeks)?.label}. That's real, lasting growth — one verse at a time.`
+                    : `At ${minutesPerDay} min/day, you could memorize ${realisticGoalResult.versesAchievable} verses in ${TIMEFRAME_OPTIONS.find(o => o.weeks === timeframeWeeks)?.label}. Ambitious — but achievable with faithful daily practice.`
+                  }"
                 </p>
               </div>
             </>
@@ -650,29 +654,6 @@ export default function ScriptureMemoryCalculator() {
               </button>
             );
           })}
-        </div>
-      </section>
-
-      {/* Famous memorization systems */}
-      <section className="mb-10">
-        <div className="bg-stone-50 rounded-2xl border border-stone-200 p-6">
-          <h2 className="text-base font-semibold text-stone-900 mb-2">Trusted scripture memory systems</h2>
-          <p className="text-sm text-stone-600 mb-4 leading-relaxed">
-            Many Christians have gone before you with structured systems worth knowing about.
-          </p>
-          <div className="grid sm:grid-cols-3 gap-4">
-            {[
-              { name: "Navigator TMS", desc: "The Navigators' Topical Memory System — 60 verses across 5 themes, a classic starting point.", href: "https://www.navigators.org/resource/topical-memory-system/" },
-              { name: "Fighter Verses", desc: "Desiring God's curated set of verses for fighting sin and fueling faith, with an app.", href: "https://www.fighterverstices.com" },
-              { name: "Charlotte Mason Method", desc: "Long-form passage memorization through daily oral repetition — used in classical education.", href: "https://www.amblesideonline.org/cmscale.shtml" },
-            ].map((sys) => (
-              <a key={sys.name} href={sys.href} target="_blank" rel="noopener noreferrer"
-                className="block bg-white rounded-xl border border-stone-200 p-4 hover:border-[#0D6E6E] transition-colors">
-                <p className="text-sm font-semibold text-stone-900 mb-1">{sys.name}</p>
-                <p className="text-xs text-stone-500 leading-relaxed">{sys.desc}</p>
-              </a>
-            ))}
-          </div>
         </div>
       </section>
 
