@@ -16,6 +16,9 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.png",
   },
+  verification: {
+    google: "5j86jin4QcDNG4TzevJBU3qnryPovqFpMXacjfoxKpM",
+  },
   openGraph: {
     siteName: "Create Good",
     type: "website",
