@@ -68,7 +68,6 @@ export default function ToolsHub() {
                   href={`/tools/${tool.slug}`}
                   className="group bg-white rounded-2xl border border-stone-200 p-6 hover:border-[#0D6E6E] hover:shadow-md transition-all duration-200"
                 >
-                  <div className="text-3xl mb-3">{tool.icon}</div>
                   <span className="text-xs font-medium text-[#D97706] tracking-wide uppercase mb-1 block">
                     {tool.category}
                   </span>
@@ -105,7 +104,6 @@ export default function ToolsHub() {
                   className="group bg-white/60 rounded-2xl border border-stone-200 p-6 opacity-70 hover:opacity-90 transition-all duration-200"
                 >
                   <div className="flex items-start justify-between mb-3">
-                    <div className="text-3xl grayscale">{tool.icon}</div>
                     <span className="text-xs font-semibold tracking-wide uppercase rounded-full bg-stone-100 text-stone-400 px-2.5 py-1">
                       Coming soon
                     </span>

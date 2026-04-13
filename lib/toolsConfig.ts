@@ -18,7 +18,7 @@ export const tools: Tool[] = [
     description:
       "Find your finish date or daily reading target based on your translation, pace, and schedule. Works for whole Bible, OT, NT, or just the Gospels.",
     status: "live",
-    icon: "📖",
+    icon: "",
     category: "Scripture",
   },
   {
@@ -28,7 +28,7 @@ export const tools: Tool[] = [
     description:
       "Set a memory goal and get a daily review schedule. Based on spaced repetition principles so the Word really sticks.",
     status: "coming-soon",
-    icon: "🧠",
+    icon: "",
     category: "Scripture",
   },
   {
@@ -38,7 +38,7 @@ export const tools: Tool[] = [
     description:
       "Explore giving percentages, project your annual impact, and see what a step of faith could mean for the Kingdom.",
     status: "coming-soon",
-    icon: "🤲",
+    icon: "",
     category: "Stewardship",
   },
   {
@@ -48,7 +48,7 @@ export const tools: Tool[] = [
     description:
       "A reflection tool to help you see where your skills, passions, and Kingdom opportunities intersect — and what to do next.",
     status: "coming-soon",
-    icon: "✨",
+    icon: "",
     category: "Calling",
   },
   {
@@ -58,7 +58,7 @@ export const tools: Tool[] = [
     description:
       "Plan sermon series across a year, balance topics, and see your preaching calendar at a glance.",
     status: "coming-soon",
-    icon: "🎙️",
+    icon: "",
     category: "Ministry",
   },
 ];
