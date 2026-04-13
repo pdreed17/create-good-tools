@@ -96,7 +96,6 @@ export default function ScriptureMemoryCalculator() {
   const [experience, setExperience] = useState<ExperienceLevel>("some");
   const [translationKey, setTranslationKey] = useState<TranslationKey>("NIV");
   const [timeframeWeeks, setTimeframeWeeks] = useState(52);
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
 
@@ -658,26 +657,13 @@ export default function ScriptureMemoryCalculator() {
       </section>
 
       {/* FAQ */}
-      <section className="mb-10">
-        <h2 className="text-xs font-semibold tracking-widest uppercase text-stone-400 mb-4">Common questions</h2>
-        <div className="space-y-2">
+      <section className="mb-12" aria-label="Frequently asked questions">
+        <h2 className="text-2xl font-bold text-stone-900 mb-6">
+          Frequently asked questions
+        </h2>
+        <div className="max-w-3xl divide-y divide-stone-100">
           {faqs.map((faq, i) => (
-            <div key={i} className="bg-white rounded-xl border border-stone-200 overflow-hidden">
-              <button
-                onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                aria-expanded={openFaq === i}
-                className="w-full text-left px-5 py-4 flex items-center justify-between gap-3 hover:bg-stone-50 transition-colors"
-              >
-                <span className="text-sm font-semibold text-stone-900">{faq.q}</span>
-                <span className="text-stone-400 flex-shrink-0 transition-transform duration-200"
-                  style={{ transform: openFaq === i ? "rotate(180deg)" : "rotate(0deg)" }}>▾</span>
-              </button>
-              {openFaq === i && (
-                <div className="px-5 pb-4">
-                  <p className="text-sm text-stone-600 leading-relaxed">{faq.a}</p>
-                </div>
-              )}
-            </div>
+            <ScriptureMemoryFaqItem key={i} q={faq.q} a={faq.a} />
           ))}
         </div>
       </section>
@@ -714,6 +700,35 @@ export default function ScriptureMemoryCalculator() {
           />
         </div>
       </section>
+    </div>
+  );
+}
+
+function ScriptureMemoryFaqItem({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <div className="border-b border-stone-100 last:border-0">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between gap-4 py-4 text-left group"
+        aria-expanded={open}
+      >
+        <h3 className="text-base font-semibold text-stone-800 group-hover:text-[#0D6E6E] transition-colors">
+          {q}
+        </h3>
+        <span
+          className="shrink-0 text-stone-400 transition-transform duration-200"
+          style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
+          aria-hidden
+        >
+          ▾
+        </span>
+      </button>
+      {open && (
+        <p className="text-stone-600 leading-relaxed text-sm pb-4">
+          {a}
+        </p>
+      )}
     </div>
   );
 }
