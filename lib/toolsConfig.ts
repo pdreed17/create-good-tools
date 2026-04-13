@@ -27,7 +27,7 @@ export const tools: Tool[] = [
     subtitle: "How many verses can you memorize this year?",
     description:
       "Set a memory goal and get a daily review schedule. Based on spaced repetition principles so the Word really sticks.",
-    status: "coming-soon",
+    status: "live",
     icon: "",
     category: "Scripture",
   },

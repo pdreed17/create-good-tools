@@ -18,7 +18,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: "https://creategoodnow.com/tools/scripture-memory-calculator",
       lastModified: new Date(),
       changeFrequency: "monthly",
-      priority: 0.5,
+      priority: 0.9,
     },
     {
       url: "https://creategoodnow.com/tools/generosity-calculator",
