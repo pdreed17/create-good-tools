@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     "Free interactive tools for Christ-centered creatives. Bible reading calculators, scripture memory trackers, generosity planners, and more.",
   metadataBase: new URL("https://creategoodnow.com"),
   icons: {
-    icon: "/favicon.svg",
+    icon: "/favicon.png",
   },
   openGraph: {
     siteName: "Create Good",
