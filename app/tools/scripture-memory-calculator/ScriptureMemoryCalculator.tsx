@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import React, { useState, useMemo, useCallback, useRef } from "react";
 import {
   calcMemorization,
   calcRealisticGoal,
@@ -12,6 +12,7 @@ import {
   EXPERIENCE_LABELS,
   EXPERIENCE_DESCRIPTIONS,
   getBookWordCount,
+  isVerifiedTranslation,
   formatDateLong,
   formatWeeks,
   type MemorizationMethod,
@@ -34,6 +35,54 @@ function countWords(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
+function TranslationSelector({
+  translationKey,
+  setTranslationKey,
+}: {
+  translationKey: TranslationKey;
+  setTranslationKey: (k: TranslationKey) => void;
+}) {
+  const selected = TRANSLATIONS.find(t => t.key === translationKey);
+  const isVerified = isVerifiedTranslation(translationKey);
+  return (
+    <fieldset>
+      <legend className="block text-sm font-semibold text-stone-800 mb-3">
+        Bible translation
+      </legend>
+      <div className="grid grid-cols-4 gap-2 mb-2">
+        {TRANSLATIONS.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTranslationKey(t.key as TranslationKey)}
+            className={`py-2 rounded-lg text-sm font-medium border transition-all relative ${
+              translationKey === t.key
+                ? "bg-[#0D6E6E] text-white border-[#0D6E6E]"
+                : "border-stone-200 text-stone-600 hover:bg-stone-50"
+            }`}
+          >
+            {t.key}
+            {!isVerifiedTranslation(t.key) && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400" title="Estimated word counts" />
+            )}
+          </button>
+        ))}
+      </div>
+      <p className="text-xs text-stone-400">
+        {selected?.fullName}
+        {isVerified
+          ? " — verified per-book word counts"
+          : " — word counts are proportional estimates"}
+        {!isVerified && (
+          <span className="inline-flex items-center gap-1 ml-1">
+            <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
+            <span className="text-amber-600">estimate</span>
+          </span>
+        )}
+      </p>
+    </fieldset>
+  );
+}
+
 export default function ScriptureMemoryCalculator() {
   const [mode, setMode] = useState<Mode>("how-long");
   const [scopeType, setScopeType] = useState<ScopeType>("passage");
@@ -53,18 +102,14 @@ export default function ScriptureMemoryCalculator() {
 
   const translation = TRANSLATIONS.find(t => t.key === translationKey) ?? TRANSLATIONS[0];
 
-  // Derive verse/word counts from scope, scaled to selected translation
   const { verseCount, wordCount, scopeLabel } = useMemo(() => {
     if (scopeType === "passage") {
-      // Passage word counts are NIV by default; scale to selected translation
-      // using NT ratio (most passages are NT; close enough for OT passages too)
-      const nivNt = 176251;
-      const transNt = translation.words.nt;
-      const scale = transNt / nivNt;
       const rawWords = passageText.trim()
         ? countWords(passageText)
         : (selectedPassage ? (POPULAR_PASSAGES.find(p => p.reference === selectedPassage)?.words ?? 25) : 25);
-      const words = passageText.trim() ? rawWords : Math.round(rawWords * scale);
+      // Scale passage word counts from NIV baseline to selected translation (NT ratio)
+      const scale = passageText.trim() ? 1 : (translation.words.nt / 176251);
+      const words = Math.round(rawWords * scale);
       const verses = selectedPassage
         ? (POPULAR_PASSAGES.find(p => p.reference === selectedPassage)?.verses ?? 1)
         : Math.max(1, Math.ceil(words / 25));
@@ -79,46 +124,35 @@ export default function ScriptureMemoryCalculator() {
         scopeLabel: book.name,
       };
     } else {
-      // Custom verse count: scale average verse length to translation
-      const nivAvgVerseWords = 25;
       const scale = translation.words.nt / 176251;
       return {
         verseCount: customVerses,
-        wordCount: Math.round(customVerses * nivAvgVerseWords * scale),
+        wordCount: Math.round(customVerses * 25 * scale),
         scopeLabel: `${customVerses} verses`,
       };
     }
   }, [scopeType, passageText, selectedPassage, selectedBook, customVerses, translation]);
 
-  const howLongResult = useMemo(() => {
-    return calcMemorization({
-      verseCount,
-      wordCount,
-      minutesPerDay,
-      daysPerWeek,
-      method,
-      experience,
-    });
-  }, [verseCount, wordCount, minutesPerDay, daysPerWeek, method, experience]);
+  const howLongResult = useMemo(() => calcMemorization({
+    verseCount,
+    wordCount,
+    minutesPerDay,
+    daysPerWeek,
+    method,
+    experience,
+  }), [verseCount, wordCount, minutesPerDay, daysPerWeek, method, experience]);
 
-  const realisticGoalResult = useMemo(() => {
-    return calcRealisticGoal({
-      timeframeWeeks,
-      minutesPerDay,
-      daysPerWeek,
-      method,
-      experience,
-    });
-  }, [timeframeWeeks, minutesPerDay, daysPerWeek, method, experience]);
+  const realisticGoalResult = useMemo(() => calcRealisticGoal({
+    timeframeWeeks,
+    minutesPerDay,
+    daysPerWeek,
+    method,
+    experience,
+  }), [timeframeWeeks, minutesPerDay, daysPerWeek, method, experience]);
 
   const handlePassageSelect = useCallback((reference: string) => {
     setSelectedPassage(reference);
     setPassageText("");
-  }, []);
-
-  const handlePassageTextChange = useCallback((text: string) => {
-    setPassageText(text);
-    setSelectedPassage(null);
   }, []);
 
   const copyLink = useCallback(() => {
@@ -128,10 +162,7 @@ export default function ScriptureMemoryCalculator() {
     });
   }, []);
 
-  // Warn if beginner + large scope
-  const showBeginnerWarning =
-    experience === "beginner" && wordCount > 500 && mode === "how-long";
-
+  const showBeginnerWarning = experience === "beginner" && wordCount > 500 && mode === "how-long";
   const otBooks = BIBLE_BOOKS.filter(b => b.testament === "OT");
   const ntBooks = BIBLE_BOOKS.filter(b => b.testament === "NT");
 
@@ -166,9 +197,7 @@ export default function ScriptureMemoryCalculator() {
     <div>
       {/* Page header */}
       <div className="pt-8 pb-6">
-        <p className="text-xs font-semibold tracking-widest uppercase text-[#D97706] mb-3">
-          Scripture
-        </p>
+        <p className="text-xs font-semibold tracking-widest uppercase text-[#D97706] mb-3">Scripture</p>
         <h1 className="text-3xl sm:text-4xl font-bold text-stone-900 mb-3 leading-tight" style={{ fontFamily: "Georgia, serif" }}>
           Scripture Memory Calculator
         </h1>
@@ -182,26 +211,17 @@ export default function ScriptureMemoryCalculator() {
       {/* Mode toggle */}
       <div className="mb-6">
         <div className="inline-flex rounded-xl border border-stone-200 bg-white p-1 gap-1">
-          <button
-            onClick={() => setMode("how-long")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              mode === "how-long"
-                ? "bg-[#0D6E6E] text-white"
-                : "text-stone-600 hover:text-stone-900 hover:bg-stone-50"
-            }`}
-          >
-            How long will it take?
-          </button>
-          <button
-            onClick={() => setMode("what-can-i")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              mode === "what-can-i"
-                ? "bg-[#0D6E6E] text-white"
-                : "text-stone-600 hover:text-stone-900 hover:bg-stone-50"
-            }`}
-          >
-            What can I memorize?
-          </button>
+          {(["how-long", "what-can-i"] as Mode[]).map((m) => (
+            <button
+              key={m}
+              onClick={() => setMode(m)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                mode === m ? "bg-[#0D6E6E] text-white" : "text-stone-600 hover:text-stone-900 hover:bg-stone-50"
+              }`}
+            >
+              {m === "how-long" ? "How long will it take?" : "What can I memorize?"}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -210,168 +230,164 @@ export default function ScriptureMemoryCalculator() {
         {/* Input panel */}
         <div className="bg-white rounded-2xl border border-stone-200 p-6 space-y-7">
 
-          {/* MODE 1 — Scope selector */}
+          {/* MODE 1 — scope + translation */}
           {mode === "how-long" && (
-            <fieldset>
-              <legend className="block text-sm font-semibold text-stone-800 mb-3">
-                What do you want to memorize?
-              </legend>
-
-              {/* Scope type tabs */}
-              <div className="flex gap-2 mb-4">
-                {(["passage", "book", "custom"] as ScopeType[]).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setScopeType(t)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-                      scopeType === t
-                        ? "bg-[#0D6E6E] text-white border-[#0D6E6E]"
-                        : "border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-stone-50"
-                    }`}
-                  >
-                    {t === "passage" ? "A passage" : t === "book" ? "A whole book" : "Custom # of verses"}
-                  </button>
-                ))}
-              </div>
-
-              {/* Passage input */}
-              {scopeType === "passage" && (
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-medium text-stone-500 mb-1">
-                      Popular passages (quick select)
-                    </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {POPULAR_PASSAGES.map((p) => (
-                        <button
-                          key={p.reference}
-                          onClick={() => handlePassageSelect(p.reference)}
-                          className={`text-left px-3 py-2 rounded-lg border text-xs transition-all ${
-                            selectedPassage === p.reference
-                              ? "bg-[#E6F3F3] border-[#0D6E6E] text-[#0D6E6E]"
-                              : "border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-stone-50"
-                          }`}
-                        >
-                          <div className="font-medium">{p.reference}</div>
-                          <div className="text-stone-400">{p.words} words</div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-stone-500 mb-1">
-                      Or paste your passage here
-                    </label>
-                    <textarea
-                      value={passageText}
-                      onChange={(e) => handlePassageTextChange(e.target.value)}
-                      placeholder="Paste or type the passage you want to memorize..."
-                      rows={4}
-                      className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D6E6E] focus:border-transparent bg-[#FAFAF8] resize-none"
-                    />
-                    {passageText.trim() && (
-                      <p className="text-xs text-[#0D6E6E] font-medium mt-1">
-                        {countWords(passageText)} words detected
-                      </p>
-                    )}
-                  </div>
+            <>
+              <fieldset>
+                <legend className="block text-sm font-semibold text-stone-800 mb-3">
+                  What do you want to memorize?
+                </legend>
+                <div className="flex gap-2 mb-4">
+                  {(["passage", "book", "custom"] as ScopeType[]).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setScopeType(t)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                        scopeType === t
+                          ? "bg-[#0D6E6E] text-white border-[#0D6E6E]"
+                          : "border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-stone-50"
+                      }`}
+                    >
+                      {t === "passage" ? "A passage" : t === "book" ? "A whole book" : "Custom # of verses"}
+                    </button>
+                  ))}
                 </div>
-              )}
 
-              {/* Book selector */}
-              {scopeType === "book" && (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {scopeType === "passage" && (
+                  <div className="space-y-3">
                     <div>
-                      <label className="block text-xs font-medium text-stone-500 mb-1">Old Testament</label>
-                      <select
-                        value={scopeType === "book" && otBooks.find(b => b.name === selectedBook) ? selectedBook : ""}
-                        onChange={(e) => { if (e.target.value) setSelectedBook(e.target.value); }}
-                        className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D6E6E] focus:border-transparent bg-[#FAFAF8]"
-                      >
-                        <option value="">Select OT book…</option>
-                        {otBooks.map((b) => (
-                          <option key={b.name} value={b.name}>
-                            {b.name} ({b.verses} v)
-                          </option>
+                      <label className="block text-xs font-medium text-stone-500 mb-1">Popular passages</label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {POPULAR_PASSAGES.map((p) => (
+                          <button
+                            key={p.reference}
+                            onClick={() => handlePassageSelect(p.reference)}
+                            className={`text-left px-3 py-2 rounded-lg border text-xs transition-all ${
+                              selectedPassage === p.reference
+                                ? "bg-[#E6F3F3] border-[#0D6E6E] text-[#0D6E6E]"
+                                : "border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-stone-50"
+                            }`}
+                          >
+                            <div className="font-medium">{p.reference}</div>
+                            <div className="text-stone-400">{p.words} words (NIV)</div>
+                          </button>
                         ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-stone-500 mb-1">New Testament</label>
-                      <select
-                        value={scopeType === "book" && ntBooks.find(b => b.name === selectedBook) ? selectedBook : ""}
-                        onChange={(e) => { if (e.target.value) setSelectedBook(e.target.value); }}
-                        className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D6E6E] focus:border-transparent bg-[#FAFAF8]"
-                      >
-                        <option value="">Select NT book…</option>
-                        {ntBooks.map((b) => (
-                          <option key={b.name} value={b.name}>
-                            {b.name} ({b.verses} v)
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  {selectedBook && (() => {
-                    const book = BIBLE_BOOKS.find(b => b.name === selectedBook);
-                    if (!book) return null;
-                    return (
-                      <div className="bg-[#E6F3F3] rounded-xl p-3 text-sm text-[#0D6E6E]">
-                        <span className="font-semibold">{selectedBook}:</span>{" "}
-                        {book.verses} verses, ~{getBookWordCount(book, translation).toLocaleString()} words
-                        <span className="text-[#0D6E6E]/60 ml-1">({translationKey} approx.)</span>
                       </div>
-                    );
-                  })()}
-                </div>
-              )}
-
-              {/* Custom verses */}
-              {scopeType === "custom" && (
-                <div>
-                  <label className="block text-xs font-medium text-stone-500 mb-2">
-                    Number of verses: <span className="text-[#0D6E6E] font-bold">{customVerses}</span>
-                  </label>
-                  <input
-                    type="range"
-                    min={1}
-                    max={500}
-                    value={customVerses}
-                    onChange={(e) => setCustomVerses(Number(e.target.value))}
-                    className="w-full accent-[#0D6E6E]"
-                  />
-                  <div className="flex justify-between text-xs text-stone-400 mt-1">
-                    <span>1 verse</span>
-                    <span>500 verses</span>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-stone-500 mb-1">Or paste your passage</label>
+                      <textarea
+                        value={passageText}
+                        onChange={(e) => { setPassageText(e.target.value); setSelectedPassage(null); }}
+                        placeholder="Paste or type the passage you want to memorize..."
+                        rows={4}
+                        className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D6E6E] focus:border-transparent bg-[#FAFAF8] resize-none"
+                      />
+                      {passageText.trim() && (
+                        <p className="text-xs text-[#0D6E6E] font-medium mt-1">
+                          {countWords(passageText)} words detected
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-            </fieldset>
+                )}
+
+                {scopeType === "book" && (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-stone-500 mb-1">Old Testament</label>
+                        <select
+                          value={otBooks.find(b => b.name === selectedBook) ? selectedBook : ""}
+                          onChange={(e) => { if (e.target.value) setSelectedBook(e.target.value); }}
+                          className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D6E6E] focus:border-transparent bg-[#FAFAF8]"
+                        >
+                          <option value="">Select OT book…</option>
+                          {otBooks.map((b) => (
+                            <option key={b.name} value={b.name}>{b.name} ({b.verses} v)</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-stone-500 mb-1">New Testament</label>
+                        <select
+                          value={ntBooks.find(b => b.name === selectedBook) ? selectedBook : ""}
+                          onChange={(e) => { if (e.target.value) setSelectedBook(e.target.value); }}
+                          className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D6E6E] focus:border-transparent bg-[#FAFAF8]"
+                        >
+                          <option value="">Select NT book…</option>
+                          {ntBooks.map((b) => (
+                            <option key={b.name} value={b.name}>{b.name} ({b.verses} v)</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    {selectedBook && (() => {
+                      const book = BIBLE_BOOKS.find(b => b.name === selectedBook);
+                      if (!book) return null;
+                      const wc = getBookWordCount(book, translation);
+                      return (
+                        <div className="bg-[#E6F3F3] rounded-xl p-3 text-sm text-[#0D6E6E]">
+                          <span className="font-semibold">{selectedBook}:</span>{" "}
+                          {book.verses} verses, ~{wc.toLocaleString()} words
+                          <span className="text-[#0D6E6E]/60 ml-1">
+                            ({translationKey}{isVerifiedTranslation(translationKey) ? "" : " — est."})
+                          </span>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {scopeType === "custom" && (
+                  <div>
+                    <label className="block text-xs font-medium text-stone-500 mb-2">
+                      Number of verses: <span className="text-[#0D6E6E] font-bold">{customVerses}</span>
+                    </label>
+                    <input
+                      type="range" min={1} max={500} value={customVerses}
+                      onChange={(e) => setCustomVerses(Number(e.target.value))}
+                      className="w-full accent-[#0D6E6E]"
+                    />
+                    <div className="flex justify-between text-xs text-stone-400 mt-1">
+                      <span>1 verse</span><span>500 verses</span>
+                    </div>
+                  </div>
+                )}
+              </fieldset>
+
+              {/* Translation — right after scope in Mode 1 */}
+              <TranslationSelector translationKey={translationKey} setTranslationKey={setTranslationKey} />
+            </>
           )}
 
-          {/* MODE 2 — Timeframe */}
+          {/* MODE 2 — timeframe + translation */}
           {mode === "what-can-i" && (
-            <fieldset>
-              <legend className="block text-sm font-semibold text-stone-800 mb-3">
-                How much time do you have?
-              </legend>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                {TIMEFRAME_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.weeks}
-                    onClick={() => setTimeframeWeeks(opt.weeks)}
-                    className={`py-2 px-1 rounded-lg text-sm font-medium border transition-all ${
-                      timeframeWeeks === opt.weeks
-                        ? "bg-[#0D6E6E] text-white border-[#0D6E6E]"
-                        : "border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-stone-50"
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
+            <>
+              <fieldset>
+                <legend className="block text-sm font-semibold text-stone-800 mb-3">
+                  How much time do you have?
+                </legend>
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                  {TIMEFRAME_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.weeks}
+                      onClick={() => setTimeframeWeeks(opt.weeks)}
+                      className={`py-2 px-1 rounded-lg text-sm font-medium border transition-all ${
+                        timeframeWeeks === opt.weeks
+                          ? "bg-[#0D6E6E] text-white border-[#0D6E6E]"
+                          : "border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-stone-50"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
+              {/* Translation — right after timeframe in Mode 2 */}
+              <TranslationSelector translationKey={translationKey} setTranslationKey={setTranslationKey} />
+            </>
           )}
 
           <div className="border-t border-stone-100" />
@@ -379,29 +395,22 @@ export default function ScriptureMemoryCalculator() {
           {/* Minutes per day */}
           <fieldset>
             <legend className="block text-sm font-semibold text-stone-800 mb-2">
-              Minutes per day:{" "}
-              <span className="text-[#0D6E6E] font-bold">{minutesPerDay} min</span>
+              Minutes per day: <span className="text-[#0D6E6E] font-bold">{minutesPerDay} min</span>
             </legend>
             <input
-              type="range"
-              min={2}
-              max={60}
-              step={1}
-              value={minutesPerDay}
+              type="range" min={2} max={60} step={1} value={minutesPerDay}
               onChange={(e) => setMinutesPerDay(Number(e.target.value))}
               className="w-full accent-[#0D6E6E]"
             />
             <div className="flex justify-between text-xs text-stone-400 mt-1">
-              <span>2 min</span>
-              <span>60 min</span>
+              <span>2 min</span><span>60 min</span>
             </div>
           </fieldset>
 
           {/* Days per week */}
           <fieldset>
             <legend className="block text-sm font-semibold text-stone-800 mb-3">
-              Days per week:{" "}
-              <span className="text-[#0D6E6E] font-bold">{daysPerWeek} day{daysPerWeek !== 1 ? "s" : ""}</span>
+              Days per week: <span className="text-[#0D6E6E] font-bold">{daysPerWeek} day{daysPerWeek !== 1 ? "s" : ""}</span>
             </legend>
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5, 6, 7].map((d) => (
@@ -424,82 +433,43 @@ export default function ScriptureMemoryCalculator() {
 
           {/* Method */}
           <fieldset>
-            <legend className="block text-sm font-semibold text-stone-800 mb-3">
-              Memorization method
-            </legend>
+            <legend className="block text-sm font-semibold text-stone-800 mb-3">Memorization method</legend>
             <div className="space-y-2">
               {(Object.keys(METHOD_LABELS) as MemorizationMethod[]).map((m) => (
                 <button
                   key={m}
                   onClick={() => setMethod(m)}
                   className={`w-full text-left px-4 py-3 rounded-xl border transition-all ${
-                    method === m
-                      ? "bg-[#E6F3F3] border-[#0D6E6E]"
-                      : "border-stone-200 hover:border-stone-300 hover:bg-stone-50"
+                    method === m ? "bg-[#E6F3F3] border-[#0D6E6E]" : "border-stone-200 hover:border-stone-300 hover:bg-stone-50"
                   }`}
                 >
                   <div className={`text-sm font-semibold ${method === m ? "text-[#0D6E6E]" : "text-stone-800"}`}>
                     {METHOD_LABELS[m]}
                   </div>
-                  <div className="text-xs text-stone-500 mt-0.5">
-                    {METHOD_DESCRIPTIONS[m]}
-                  </div>
+                  <div className="text-xs text-stone-500 mt-0.5">{METHOD_DESCRIPTIONS[m]}</div>
                 </button>
               ))}
             </div>
-          </fieldset>
-
-          <div className="border-t border-stone-100" />
-
-          {/* Translation */}
-          <fieldset>
-            <legend className="block text-sm font-semibold text-stone-800 mb-3">
-              Bible translation
-            </legend>
-            <div className="grid grid-cols-4 gap-2">
-              {TRANSLATIONS.map((t) => (
-                <button
-                  key={t.key}
-                  onClick={() => setTranslationKey(t.key as TranslationKey)}
-                  className={`py-2 rounded-lg text-sm font-medium border transition-all ${
-                    translationKey === t.key
-                      ? "bg-[#0D6E6E] text-white border-[#0D6E6E]"
-                      : "border-stone-200 text-stone-600 hover:bg-stone-50"
-                  }`}
-                >
-                  {t.key}
-                </button>
-              ))}
-            </div>
-            <p className="text-xs text-stone-400 mt-2">
-              {TRANSLATIONS.find(t => t.key === translationKey)?.fullName} — word counts scaled accordingly
-            </p>
           </fieldset>
 
           <div className="border-t border-stone-100" />
 
           {/* Experience */}
           <fieldset>
-            <legend className="block text-sm font-semibold text-stone-800 mb-3">
-              Your experience level
-            </legend>
+            <legend className="block text-sm font-semibold text-stone-800 mb-3">Your experience level</legend>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {(Object.keys(EXPERIENCE_LABELS) as ExperienceLevel[]).map((e) => (
                 <button
                   key={e}
                   onClick={() => setExperience(e)}
                   className={`text-left px-4 py-3 rounded-xl border transition-all ${
-                    experience === e
-                      ? "bg-[#E6F3F3] border-[#0D6E6E]"
-                      : "border-stone-200 hover:border-stone-300 hover:bg-stone-50"
+                    experience === e ? "bg-[#E6F3F3] border-[#0D6E6E]" : "border-stone-200 hover:border-stone-300 hover:bg-stone-50"
                   }`}
                 >
                   <div className={`text-sm font-semibold ${experience === e ? "text-[#0D6E6E]" : "text-stone-800"}`}>
                     {EXPERIENCE_LABELS[e]}
                   </div>
-                  <div className="text-xs text-stone-500 mt-0.5">
-                    {EXPERIENCE_DESCRIPTIONS[e]}
-                  </div>
+                  <div className="text-xs text-stone-500 mt-0.5">{EXPERIENCE_DESCRIPTIONS[e]}</div>
                 </button>
               ))}
             </div>
@@ -510,20 +480,16 @@ export default function ScriptureMemoryCalculator() {
         <div ref={resultsRef} className="space-y-4">
           {mode === "how-long" ? (
             <>
-              {/* Primary result */}
               <div className="bg-[#0D6E6E] rounded-2xl p-6 text-white">
-                <p className="text-xs font-semibold tracking-widest uppercase text-white/60 mb-1">
-                  Time to memorize
-                </p>
+                <p className="text-xs font-semibold tracking-widest uppercase text-white/60 mb-1">Time to memorize</p>
                 <p className="text-4xl font-bold leading-tight mb-1">
                   {formatWeeks(howLongResult.initialMemorizationWeeks)}
                 </p>
                 <p className="text-sm text-white/70">
-                  {scopeLabel} · {verseCount} verse{verseCount !== 1 ? "s" : ""} · ~{wordCount.toLocaleString()} words ({translationKey})
+                  {scopeLabel} · {verseCount} verse{verseCount !== 1 ? "s" : ""} · ~{wordCount.toLocaleString()} words ({translationKey}{!isVerifiedTranslation(translationKey) ? " est." : ""})
                 </p>
               </div>
 
-              {/* Key dates */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-white rounded-xl border border-stone-200 p-4">
                   <p className="text-xs text-stone-500 mb-1">Memorized by</p>
@@ -541,13 +507,12 @@ export default function ScriptureMemoryCalculator() {
                 </div>
               </div>
 
-              {/* Daily pace */}
               <div className="bg-white rounded-xl border border-stone-200 p-4">
                 <p className="text-sm font-semibold text-stone-800 mb-2">Daily practice</p>
                 <p className="text-sm text-stone-600 mb-3">
                   {howLongResult.versesPerDay >= 1
-                    ? <>Focus on <span className="font-bold text-stone-900">{Math.round(howLongResult.versesPerDay * 10) / 10} new verse{howLongResult.versesPerDay >= 2 ? "s" : ""}</span> per study day</>
-                    : <>Learn <span className="font-bold text-stone-900">1 new verse every {Math.round(howLongResult.daysPerVerse)} day{Math.round(howLongResult.daysPerVerse) !== 1 ? "s" : ""}</span></>
+                    ? <><span className="font-bold text-stone-900">{Math.round(howLongResult.versesPerDay * 10) / 10} new verse{howLongResult.versesPerDay >= 2 ? "s" : ""}</span> per study day</>
+                    : <>1 new verse every <span className="font-bold text-stone-900">{Math.round(howLongResult.daysPerVerse)} day{Math.round(howLongResult.daysPerVerse) !== 1 ? "s" : ""}</span></>
                   }
                 </p>
                 <div className="space-y-2">
@@ -564,14 +529,12 @@ export default function ScriptureMemoryCalculator() {
                 </div>
               </div>
 
-              {/* Encouragement */}
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
                 <p className="text-sm text-amber-800 leading-relaxed italic">
                   "{howLongResult.encouragementText}"
                 </p>
               </div>
 
-              {/* Beginner warning */}
               {showBeginnerWarning && (
                 <div className="bg-stone-50 border border-stone-200 rounded-xl p-4">
                   <p className="text-sm font-semibold text-stone-800 mb-1">A gentle suggestion</p>
@@ -584,16 +547,13 @@ export default function ScriptureMemoryCalculator() {
             </>
           ) : (
             <>
-              {/* Mode 2 primary result */}
               <div className="bg-[#0D6E6E] rounded-2xl p-6 text-white">
-                <p className="text-xs font-semibold tracking-widest uppercase text-white/60 mb-1">
-                  Verses achievable
-                </p>
+                <p className="text-xs font-semibold tracking-widest uppercase text-white/60 mb-1">Verses achievable</p>
                 <p className="text-4xl font-bold leading-tight mb-1">
                   {realisticGoalResult.versesAchievable} verses
                 </p>
                 <p className="text-sm text-white/70">
-                  in {TIMEFRAME_OPTIONS.find(o => o.weeks === timeframeWeeks)?.label ?? `${timeframeWeeks} weeks`} at {minutesPerDay} min/day
+                  in {TIMEFRAME_OPTIONS.find(o => o.weeks === timeframeWeeks)?.label} at {minutesPerDay} min/day
                 </p>
               </div>
 
@@ -626,7 +586,6 @@ export default function ScriptureMemoryCalculator() {
             </>
           )}
 
-          {/* Share */}
           <button
             onClick={copyLink}
             className="w-full py-3 rounded-xl border border-stone-200 text-sm font-medium text-stone-600 hover:border-[#0D6E6E] hover:text-[#0D6E6E] transition-all"
@@ -639,67 +598,55 @@ export default function ScriptureMemoryCalculator() {
       {/* Spaced repetition explainer */}
       <section className="mb-10">
         <div className="bg-white rounded-2xl border border-stone-200 p-6">
-          <h2 className="text-lg font-bold text-stone-900 mb-1">
-            Why spaced repetition changes everything
-          </h2>
-          <p className="text-sm text-stone-600 leading-relaxed mb-4" style={{ fontFamily: "Georgia, serif" }}>
+          <h2 className="text-lg font-bold text-stone-900 mb-1">Why spaced repetition changes everything</h2>
+          <p className="text-sm text-stone-600 leading-relaxed mb-5" style={{ fontFamily: "Georgia, serif" }}>
             The goal isn&apos;t to memorize a verse for Sunday school. It&apos;s to have it ready when you need it
             most — in grief, in temptation, in a conversation. That kind of retention requires review
-            at increasing intervals, not daily grinding. Here&apos;s what a review schedule looks like after
-            initial memorization:
+            at increasing intervals. Here&apos;s the review cadence after initial memorization:
           </p>
-          <div className="relative">
-            {/* Timeline */}
-            <div className="flex items-start gap-0 overflow-x-auto pb-2">
-              {(mode === "how-long" ? howLongResult : calcMemorization({ verseCount: 5, wordCount: 125, minutesPerDay, daysPerWeek, method, experience })).spacedRepetitionSchedule.map((step, i, arr) => (
-                <div key={i} className="flex flex-col items-center min-w-[100px]">
-                  <div className="flex items-center w-full">
-                    <div className={`h-3 w-3 rounded-full flex-shrink-0 ${i === 0 ? "bg-[#0D6E6E]" : i === arr.length - 1 ? "bg-[#0D6E6E]" : "bg-[#5FAAAA]"}`} />
-                    {i < arr.length - 1 && <div className="flex-1 h-0.5 bg-stone-200" />}
-                  </div>
-                  <div className="mt-2 text-center px-1">
-                    <p className="text-xs font-semibold text-stone-800">{step.label}</p>
-                    <p className="text-xs text-stone-500 leading-snug mt-0.5">{step.description}</p>
-                  </div>
+          <div className="flex items-start gap-0 overflow-x-auto pb-2">
+            {howLongResult.spacedRepetitionSchedule.map((step, i, arr) => (
+              <div key={i} className="flex flex-col items-center min-w-[100px]">
+                <div className="flex items-center w-full">
+                  <div className={`h-3 w-3 rounded-full flex-shrink-0 ${i === 0 || i === arr.length - 1 ? "bg-[#0D6E6E]" : "bg-[#5FAAAA]"}`} />
+                  {i < arr.length - 1 && <div className="flex-1 h-0.5 bg-stone-200" />}
                 </div>
-              ))}
-            </div>
+                <div className="mt-2 text-center px-1">
+                  <p className="text-xs font-semibold text-stone-800">{step.label}</p>
+                  <p className="text-xs text-stone-500 leading-snug mt-0.5">{step.description}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Suggested starting passages */}
       <section className="mb-10">
-        <h2 className="text-xs font-semibold tracking-widest uppercase text-stone-400 mb-4">
-          Not sure where to start?
-        </h2>
-        <p className="text-sm text-stone-600 mb-4">
-          Here are passages Christians love to memorize first.
-        </p>
+        <h2 className="text-xs font-semibold tracking-widest uppercase text-stone-400 mb-2">Not sure where to start?</h2>
+        <p className="text-sm text-stone-600 mb-4">Here are passages Christians love to memorize first.</p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {POPULAR_PASSAGES.slice(0, 6).map((p) => {
             const est = calcMemorization({
-              verseCount: p.verses,
-              wordCount: p.words,
-              minutesPerDay: 10,
-              daysPerWeek: 6,
-              method: "spaced-repetition",
-              experience: "some",
+              verseCount: p.verses, wordCount: p.words,
+              minutesPerDay: 10, daysPerWeek: 6,
+              method: "spaced-repetition", experience: "some",
             });
             return (
               <button
                 key={p.reference}
-                onClick={() => { setScopeType("passage"); handlePassageSelect(p.reference); setMode("how-long"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                onClick={() => {
+                  setScopeType("passage");
+                  handlePassageSelect(p.reference);
+                  setMode("how-long");
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
                 className="group text-left bg-white rounded-2xl border border-stone-200 p-5 hover:border-[#0D6E6E] hover:shadow-md transition-all"
               >
                 <p className="text-xs font-medium text-[#D97706] tracking-wide uppercase mb-1">{p.theme}</p>
-                <h3 className="font-semibold text-stone-900 mb-1 group-hover:text-[#0D6E6E] transition-colors">
-                  {p.reference}
-                </h3>
-                <p className="text-xs text-stone-500 mb-2">{p.words} words · {p.verses} verse{p.verses !== 1 ? "s" : ""}</p>
-                <p className="text-xs text-[#0D6E6E] font-medium">
-                  ~{formatWeeks(est.initialMemorizationWeeks)} at 10 min/day →
-                </p>
+                <h3 className="font-semibold text-stone-900 mb-1 group-hover:text-[#0D6E6E] transition-colors">{p.reference}</h3>
+                <p className="text-xs text-stone-500 mb-2">{p.words} words (NIV) · {p.verses} verse{p.verses !== 1 ? "s" : ""}</p>
+                <p className="text-xs text-[#0D6E6E] font-medium">~{formatWeeks(est.initialMemorizationWeeks)} at 10 min/day →</p>
               </button>
             );
           })}
@@ -709,38 +656,19 @@ export default function ScriptureMemoryCalculator() {
       {/* Famous memorization systems */}
       <section className="mb-10">
         <div className="bg-stone-50 rounded-2xl border border-stone-200 p-6">
-          <h2 className="text-base font-semibold text-stone-900 mb-2">
-            Trusted scripture memory systems
-          </h2>
+          <h2 className="text-base font-semibold text-stone-900 mb-2">Trusted scripture memory systems</h2>
           <p className="text-sm text-stone-600 mb-4 leading-relaxed">
             Many Christians have gone before you with structured systems worth knowing about.
           </p>
           <div className="grid sm:grid-cols-3 gap-4">
             {[
-              {
-                name: "Navigator TMS",
-                desc: "The Navigators' Topical Memory System — 60 verses across 5 themes, a classic starting point.",
-                href: "https://www.navigators.org/resource/topical-memory-system/",
-              },
-              {
-                name: "Fighter Verses",
-                desc: "Desiring God's curated set of verses for fighting sin and fueling faith, with an app.",
-                href: "https://www.fighterverstices.com",
-              },
-              {
-                name: "Charlotte Mason Method",
-                desc: "Long-form passage memorization through daily oral repetition — used in classical education.",
-                href: "https://www.amblesideonline.org/cmscale.shtml",
-              },
+              { name: "Navigator TMS", desc: "The Navigators' Topical Memory System — 60 verses across 5 themes, a classic starting point.", href: "https://www.navigators.org/resource/topical-memory-system/" },
+              { name: "Fighter Verses", desc: "Desiring God's curated set of verses for fighting sin and fueling faith, with an app.", href: "https://www.fighterverstices.com" },
+              { name: "Charlotte Mason Method", desc: "Long-form passage memorization through daily oral repetition — used in classical education.", href: "https://www.amblesideonline.org/cmscale.shtml" },
             ].map((sys) => (
-              <a
-                key={sys.name}
-                href={sys.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block bg-white rounded-xl border border-stone-200 p-4 hover:border-[#0D6E6E] transition-colors"
-              >
-                <p className="text-sm font-semibold text-stone-900 mb-1 hover:text-[#0D6E6E]">{sys.name}</p>
+              <a key={sys.name} href={sys.href} target="_blank" rel="noopener noreferrer"
+                className="block bg-white rounded-xl border border-stone-200 p-4 hover:border-[#0D6E6E] transition-colors">
+                <p className="text-sm font-semibold text-stone-900 mb-1">{sys.name}</p>
                 <p className="text-xs text-stone-500 leading-relaxed">{sys.desc}</p>
               </a>
             ))}
@@ -750,9 +678,7 @@ export default function ScriptureMemoryCalculator() {
 
       {/* FAQ */}
       <section className="mb-10">
-        <h2 className="text-xs font-semibold tracking-widest uppercase text-stone-400 mb-4">
-          Common questions
-        </h2>
+        <h2 className="text-xs font-semibold tracking-widest uppercase text-stone-400 mb-4">Common questions</h2>
         <div className="space-y-2">
           {faqs.map((faq, i) => (
             <div key={i} className="bg-white rounded-xl border border-stone-200 overflow-hidden">
@@ -762,12 +688,8 @@ export default function ScriptureMemoryCalculator() {
                 className="w-full text-left px-5 py-4 flex items-center justify-between gap-3 hover:bg-stone-50 transition-colors"
               >
                 <span className="text-sm font-semibold text-stone-900">{faq.q}</span>
-                <span
-                  className="text-stone-400 flex-shrink-0 transition-transform duration-200"
-                  style={{ transform: openFaq === i ? "rotate(180deg)" : "rotate(0deg)" }}
-                >
-                  ▾
-                </span>
+                <span className="text-stone-400 flex-shrink-0 transition-transform duration-200"
+                  style={{ transform: openFaq === i ? "rotate(180deg)" : "rotate(0deg)" }}>▾</span>
               </button>
               {openFaq === i && (
                 <div className="px-5 pb-4">
@@ -779,7 +701,7 @@ export default function ScriptureMemoryCalculator() {
         </div>
       </section>
 
-      {/* Bottom CTA — Spread the word + Tally */}
+      {/* Bottom CTA */}
       <section className="mb-4">
         <div className="bg-[#E6F3F3] rounded-2xl p-6 mb-4">
           <h2 className="text-xl font-bold text-stone-900 mb-2" style={{ fontFamily: "Georgia, serif" }}>
@@ -797,18 +719,17 @@ export default function ScriptureMemoryCalculator() {
         </div>
 
         <div className="bg-white rounded-2xl border border-stone-200 p-6">
-          <h2 className="text-base font-semibold text-stone-900 mb-1">
-            Stay connected with Create Good
-          </h2>
+          <h2 className="text-base font-semibold text-stone-900 mb-1">Stay connected with Create Good</h2>
           <p className="text-sm text-stone-500 mb-4">
             New tools, resources, and encouragement for Christ-centered creatives.
           </p>
           <iframe
             src="https://tally.so/embed/EkJerB?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1"
             width="100%"
-            height="120"
+            height="160"
             frameBorder={0}
             title="Stay connected with Create Good"
+            style={{ minHeight: 160 }}
           />
         </div>
       </section>
